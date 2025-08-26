@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Zombie Survival — How Long Can You Last?</title>
+  <style>
+    :root{--bg:#0b0f13;--panel:#0f1720;--accent:#e85548;--muted:#9aa6b2;--good:#56c596}
+    html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#071018 0%,#0b0f13 100%);color:#e6eef3}
+    .app{max-width:1000px;margin:24px auto;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.7)}
+    header{display:flex;align-items:center;gap:16px}
+    h1{margin:0;font-size:20px}
+    .grid{display:grid;grid-template-columns:320px 1fr;gap:16px;margin-top:16px}
+    .panel{background:var(--panel);padding:14px;border-radius:10px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
+    .stat{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,0.02)}
+    .team{display:flex;flex-direction:column;gap:8px}
+    .member{display:flex;justify-content:space-between;align-items:center;padding:6px;border-radius:6px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.01))}
+    .log{height:380px;overflow:auto;padding:8px;background:rgba(0,0,0,0.12);border-radius:8px}
+    .choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    button.choice{background:#12181c;border:1px solid rgba(255,255,255,0.03);color:var(--muted);padding:10px 12px;border-radius:8px;cursor:pointer}
+    button.choice:hover{border-color:var(--accent);color:#fff}
+    .big{font-weight:700;color:var(--accent)}
+    footer{margin-top:14px;text-align:center;color:var(--muted);font-size:13px}
+    .status-line{display:flex;gap:8px;flex-wrap:wrap}
+    .pill{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:8px;font-weight:600}
+    .center{display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .danger{color:#ff7b7b}
+    .success{color:var(--good)}
+    .title-small{font-size:13px;color:var(--muted);margin-bottom:6px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Zombie Survival — How Long Can You Last?</h1>
+        <div class="title-small">Featuring Raul, Tamara, Chris, and David — jokes & hard choices included.</div>
+      </div>
+      <div style="margin-left:auto" class="status-line">
+        <div class="pill">Day <span id="day">1</span></div>
+        <div class="pill">Food: <span id="food">6</span></div>
+        <div class="pill">Ammo: <span id="ammo">8</span></div>
+        <div class="pill">Medkits: <span id="medkits">2</span></div>
+        <div class="pill">Barricade: <span id="barricade">2</span></div>
+        <div class="pill">Morale: <span id="morale">3</span></div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <aside class="panel">
+        <div class="title-small">Team</div>
+        <div class="team" id="team"></div>
+
+        <div style="margin-top:12px" class="title-small">Quick actions</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button id="heal" class="choice">Use medkit (Tamara)</button>
+          <button id="repair" class="choice">Repair barricade (Chris)</button>
+          <button id="status-log" class="choice">Show logs</button>
+        </div>
+
+        <div style="margin-top:14px" class="title-small">Controls</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="restart" class="choice">Restart Game</button>
+          <button id="auto" class="choice">Auto-run day</button>
+        </div>
+
+      </aside>
+
+      <main class="panel">
+        <div class="title-small">Event</div>
+        <div id="event-title" style="font-weight:700;font-size:18px;margin-bottom:8px">Welcome</div>
+        <div id="event-desc" style="min-height:82px;line-height:1.4;">You and your team are alive — for now. Make choices each day and survive nights. Some choices are funny, some are grim. Some will force a restart.</div>
+
+        <div class="choices" id="choices"></div>
+
+        <div style="margin-top:12px" class="title-small">Camp log</div>
+        <div class="log" id="log"></div>
+
+      </main>
+    </div>
+
+    <footer>
+      <div id="result"></div>
+    </footer>
+  </div>
+
+  <script>
+    // Simple port of the decision game to HTML + JS
+    const SURVIVORS = [
+      {name: 'Raul', skill: 'scout', quip: "I miss traffic. At least it was predictable."},
+      {name: 'Tamara', skill: 'medic', quip: "Hydrate or diedrate. Not a threat, a fact."},
+      {name: 'Chris', skill: 'engineer', quip: "If duct tape can't fix it, you need more duct tape."},
+      {name: 'David', skill: 'leader', quip: "This is fine. *gestures at apocalypse*"},
+    ];
+
+    function rnd(min,max){ return Math.floor(Math.random()*(max-min+1))+min }
+    function chance(p){ return Math.random() < p }
+
+    const game = {
+      day:1, food:6, ammo:8, medkits:2, barricade:2, morale:3, alive:true,
+      team: {}, log: []
+    };
+
+    function newGame(){
+      game.day=1; game.food=6; game.ammo=8; game.medkits=2; game.barricade=2; game.morale=3; game.alive=true; game.log=[];
+      game.team = {};
+      SURVIVORS.forEach(s=> game.team[s.name] = {...s, hp:3, alive:true});
+      ui.updateAll(); ui.log("Game started. Make your choices.");
+      ui.showEvent(welcomeEvent);
+    }
+
+    // UI helpers
+    const ui = {
+      updateAll(){
+        document.getElementById('day').textContent = game.day;
+        document.getElementById('food').textContent = game.food;
+        document.getElementById('ammo').textContent = game.ammo;
+        document.getElementById('medkits').textContent = game.medkits;
+        document.getElementById('barricade').textContent = game.barricade;
+        document.getElementById('morale').textContent = game.morale;
+        // team
+        const teamDiv = document.getElementById('team'); teamDiv.innerHTML = '';
+        for(const [name,p] of Object.entries(game.team)){
+          const el = document.createElement('div'); el.className='member';
+          el.innerHTML = `<div><strong>${name}</strong> <span style='color:${p.alive?"#cce":"#a66"}'>${p.alive?('❤'.repeat(p.hp)):'☠'}</span></div><div style='font-size:12px;color:var(--muted)'>${p.skill}</div>`;
+          teamDiv.appendChild(el);
+        }
+      },
+      showEvent(evt){
+        document.getElementById('event-title').textContent = evt.title;
+        document.getElementById('event-desc').textContent = evt.desc;
+        const choices = document.getElementById('choices'); choices.innerHTML='';
+        evt.options.forEach(opt=>{
+          const b = document.createElement('button'); b.className='choice'; b.textContent = opt.label;
+          b.onclick = ()=>{ opt.action(); }
+          choices.appendChild(b);
+        });
+      },
+      log(msg){ game.log.unshift({t:Date.now(), m:msg}); const el = document.getElementById('log'); el.innerHTML = game.log.map(x=>`<div style="margin-bottom:6px">${x.m}</div>`).join(''); },
+      endRun(){
+        document.getElementById('result').innerHTML = `<div class='big'>You survived ${Math.max(0,game.day-1)} day(s).</div>`;
+        document.getElementById('choices').innerHTML = '';
+      }
+    };
+
+    // core helpers
+    function anyAlive(){ return Object.values(game.team).some(p=>p.alive) }
+    function injure(who, dmg=1){ const p=game.team[who]; if(!p||!p.alive) return; p.hp -= dmg; if(p.hp<=0){ p.alive=false; ui.log(`${who} falls... The silence after is too loud.`); game.morale = Math.max(0, game.morale-2); if(who==='David') game.morale = Math.max(0, game.morale-2); } else ui.log(`${who} takes a hit! (${p.hp} hp left)`); }
+    function healSomeone(){ const injured = Object.values(game.team).filter(p=>p.alive && p.hp<3); if(game.medkits>0 && injured.length>0){ const who = injured[Math.floor(Math.random()*injured.length)]; who.hp = Math.min(3, who.hp+2); game.medkits--; ui.log(`Tamara patches up ${who.name}. Their health looks better.`); game.morale = Math.min(5, game.morale+1); ui.updateAll(); } else ui.log('No one needs healing or no medkits.'); }
+
+    // Events
+    const welcomeEvent = {
+      title: 'Welcome', desc: 'You wake up in a small safe house. The team looks to you. Make smart choices and try to last as long as possible. Warning: some choices end runs.',
+      options: [
+        {label:'Start Day', action: ()=> { ui.log('Day begins.'); nextDayEvent(); }}
+      ]
+    };
+
+    function nextDayEvent(){
+      ui.updateAll();
+      // choose a random daytime event
+      const deck = [eventScout, eventStranger, eventRadio, eventArgument];
+      const e = deck[Math.floor(Math.random()*deck.length)];
+      e();
+    }
+
+    function eventScout(){
+      ui.showEvent({title:'SCOUTING', desc:'Raul spots a grocery store. Windows smashed. Quiet-ish. Probably raccoons. Or zombies. Or zombie raccoons.', options:[
+        {label:'Go in loud (spend 2 ammo, safer)', action: ()=>{
+          const spend = Math.min(2, game.ammo); game.ammo -= spend; const loot = rnd(2,4); game.food += loot; ui.log(`You clear a path. Find ${loot} food. A raccoon judges your life choices.`); afterDay();
+        }},
+        {label:'Go in quiet (risk injury, more loot)', action: ()=>{
+          if(chance(0.5)){ const targets = Object.keys(game.team).filter(n=>game.team[n].alive); const who = targets[Math.floor(Math.random()*targets.length)]; injure(who,1); const loot = rnd(3,6); game.food += loot; ui.log(`You tiptoe through cereal. ${loot} food snagged. You also snag a scratch.`); }
+          else { const loot = rnd(4,7); game.food += loot; ui.log(`Stealth like a cat. +${loot} food!`); }
+          afterDay();
+        }},
+        {label:'Skip it (conserve resources)', action: ()=>{ game.morale = Math.max(0, game.morale-1); ui.log('You pass. Morale dips from hungry vibes.'); afterDay(); }}
+      ]});
+    }
+
+    function eventStranger(){
+      ui.showEvent({title:'STRANGER', desc:"A stranger waves a white flag. Says their name is Ash. Could be a trap. Could be a friend. Could be a mime.", options:[
+        {label:'Let Ash join', action: ()=>{
+          if(chance(0.5)){ game.barricade = Math.min(5, game.barricade+2); game.morale = Math.min(5, game.morale+1); ui.log('Ash is handy! Repairs your barricade.'); } else { game.food = Math.max(0, game.food-2); game.morale = Math.max(0, game.morale-1); ui.log('Ash eats like a black hole and snores like thunder.'); } afterDay();
+        }},
+        {label:'Trade only (2 food for 3 ammo)', action: ()=>{ if(game.food>=2){ game.food -=2; game.ammo +=3; ui.log('A fair trade. Capitalism lives on.'); } else ui.log("You can't spare the food."); afterDay(); }},
+        {label:'Drive them off', action: ()=>{ game.morale = Math.max(0, game.morale-1); ui.log('You send them away. Everyone stares at the floor for a bit.'); afterDay(); }}
+      ]});
+    }
+
+    function eventRadio(){
+      ui.showEvent({title:'RADIO STATIC', desc:"'Safe zone at the old stadium.' Tamara raises an eyebrow. Could be salvation. Could be a buffet.", options:[
+        {label:'Head to the stadium (high risk, high reward)', action: ()=>{
+          const danger = rnd(2,5);
+          if(game.ammo >= danger){ game.ammo -= danger; game.food +=5; game.ammo +=4; game.medkits +=1; game.morale = Math.min(5, game.morale+2); ui.log('You carve a path through the horde. The militia helps — supplies gained.'); }
+          else { const targets = Object.keys(game.team).filter(n=>game.team[n].alive); const lost = targets[Math.floor(Math.random()*targets.length)]; injure(lost,3); ui.log('Outgunned. The streets are a blender.'); }
+          afterDay(); }},
+        {label:'Ignore it', action: ()=>{ ui.log('You play the long game. Boring is good.'); afterDay(); }},
+        {label:'Send Raul to scout', action: ()=>{
+          if(game.team['Raul'].alive){ if(chance(0.6)){ game.food +=3; game.morale = Math.min(5, game.morale+1); ui.log('Raul returns with a thumbs up and a pretzel. +3 food.'); } else { injure('Raul',2); ui.log('Raul limps back, pale. He needs help.'); } } else ui.log('Raul is gone. The walkie crackles with ghosts.'); afterDay(); }}
+      ]});
+    }
+
+    function eventArgument(){
+      ui.showEvent({title:'TENSION', desc:'An argument sparks over whether pineapple belongs on apocalypse pizza.', options:[
+        {label:'Mediation (David calms everyone)', action: ()=>{ if(game.team['David'].alive){ game.morale = Math.min(5, game.morale+1); ui.log('David calms everyone. Morale +1.'); } else { game.morale = Math.max(0, game.morale-1); ui.log('No one to lead. The silence is heavy.'); } afterDay(); }},
+        {label:'Let them vent', action: ()=>{ if(chance(0.5)){ game.morale = Math.min(5, game.morale+1); ui.log('They cool off on their own. Morale +1.'); } else { const targets = Object.keys(game.team).filter(n=>game.team[n].alive); const who = targets[Math.floor(Math.random()*targets.length)]; injure(who,1); ui.log(`${who} storms out and has a close call.`); } afterDay(); }},
+        {label:'Crack a joke', action: ()=>{ if(chance(0.5)){ game.morale = Math.min(5, game.morale+1); ui.log('Chris delivers a pun so bad it loops around to brilliant. Morale +1.'); } else { game.morale = Math.max(0, game.morale-1); ui.log('The joke lands like a brick. Morale -1.'); } afterDay(); }}
+      ]});
+    }
+
+    // Night phase
+    function eventNight(){
+      ui.log('NIGHT FALLS: Groans in the dark.');
+      let pressure = rnd(1,4);
+      ui.log(`Zombie pressure: ${pressure}`);
+      function defendWithAmmo(){ const spend = Math.min(game.ammo,3); game.ammo -= spend; pressure = Math.max(0, pressure-spend); ui.log(`You shoot some. Pressure now ${pressure}.`); }
+      function reinforce(){ game.barricade = Math.min(5, game.barricade+1); if(chance(0.5)){ const targets = Object.keys(game.team).filter(n=>game.team[n].alive); const who = targets[Math.floor(Math.random()*targets.length)]; injure(who,1); ui.log(`${who} hurt while repairing.`); } ui.log(`Barricade now ${game.barricade}.`); }
+      function hide(){ pressure +=1; ui.log('You hold your breath. The stomach growl betrays you.'); }
+
+      // We'll prompt player for night action using choices
+      ui.showEvent({title:'NIGHT: Choose defense', desc:'How do you survive the night?', options:[
+        {label:'Defend with ammo (spend up to 3)', action: ()=>{ defendWithAmmo(); finishNight(); }},
+        {label:'Reinforce barricade (risk injury)', action: ()=>{ reinforce(); finishNight(); }},
+        {label:'Hide and hope (risky)', action: ()=>{ hide(); finishNight(); }}
+      ]});
+
+      function finishNight(){
+        // barricade reduces pressure
+        pressure = Math.max(0, pressure - Math.floor(game.barricade/2));
+        if(pressure>2){ const targets = Object.keys(game.team).filter(n=>game.team[n].alive); if(targets.length){ const who = targets[Math.floor(Math.random()*targets.length)]; injure(who, pressure-1); if(!anyAlive()){ game.alive=false; return gameOver(); } } }
+        else ui.log('The dead shuffle off to complain elsewhere.');
+
+        // Morning upkeep: eat
+        const eaten = Math.min(4, game.food); game.food = Math.max(0, game.food - eaten);
+        if(eaten < 4){ ui.log('Not enough food. Morale suffers. Hunger causes random injuries.'); game.morale = Math.max(0, game.morale-1); for(const name in game.team){ if(game.team[name].alive && chance(0.25)){ injure(name,1); if(!anyAlive()){ game.alive=false; return gameOver(); } } } }
+
+        if(chance(0.25)){ ui.log('Morning surprise: Chris rigs a rain-catcher. Morale +1.'); game.morale = Math.min(5, game.morale+1); }
+        game.day +=1; ui.updateAll();
+
+        // morale collapse chance
+        if(game.morale==0 && chance(0.25)){ ui.log('Spirits shatter. A small mistake becomes a big one.'); const targets = Object.keys(game.team).filter(n=>game.team[n].alive); if(targets.length){ injure(targets[Math.floor(Math.random()*targets.length)],3); if(!anyAlive()){ game.alive=false; return gameOver(); } } }
+
+        // continue to next day
+        nextDayEvent();
+      }
+    }
+
+    function afterDay(){ ui.updateAll(); // proceed to night
+      // small comedic interlude chance
+      if(chance(0.2)){ const quip = SURVIVORS[Math.floor(Math.random()*SURVIVORS.length)].quip; ui.log('Camp banter: '+quip); }
+      // then night
+      setTimeout(()=> eventNight(), 350); // tiny delay for UX
+    }
+
+    function gameOver(){ ui.updateAll(); ui.log('Game over.'); ui.endRun(); }
+
+    // Hook up quick actions
+    document.getElementById('heal').onclick = ()=>{ if(game.medkits>0){ healSomeone(); ui.updateAll(); } else ui.log('No medkits left.'); };
+    document.getElementById('repair').onclick = ()=>{ if(game.ammo>=1){ game.ammo = Math.max(0, game.ammo-1); game.barricade = Math.min(5, game.barricade+1); ui.log('Chris repairs the barricade (used 1 ammo).'); ui.updateAll(); } else { ui.log('No ammo to use as tool.'); } };
+    document.getElementById('restart').onclick = ()=>{ if(confirm('Restart the game?')) newGame(); };
+    document.getElementById('auto').onclick = ()=>{ // auto-run one day: choose random choices
+      ui.log('Auto-run: letting fate decide for one day.');
+      const deck = [eventScout, eventStranger, eventRadio, eventArgument];
+      const e = deck[Math.floor(Math.random()*deck.length)]; e();
+    };
+
+    // initial run
+    newGame();
+
+  </script>
+</body>
+</html>
