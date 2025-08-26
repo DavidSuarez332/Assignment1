@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZOMBZ — Two-Player Zombie Survival</title>
+<style>
+body { font-family: monospace; background:#111; color:#eee; margin:0; padding:0; }
+#header { text-align:center; font-size:2em; color:#ff4444; padding:10px; }
+#location { position:relative; width:100%; height:300px; background-size:cover; margin-bottom:10px; border-bottom:4px solid #ff4444; }
+#zombies { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+#team { display:flex; justify-content:space-around; margin:10px 0; }
+.portrait { width:70px; height:70px; border-radius:10px; border:3px solid #eee; transition: filter 0.3s; position:relative; }
+.portrait img { width:100%; height:100%; border-radius:10px; }
+#supplies { display:flex; justify-content:space-around; margin:10px 0; }
+.status-bar { height:20px; width:100px; background:#333; border-radius:10px; overflow:hidden; }
+.status-fill { height:100%; transition:width 0.3s; }
+#log { white-space: pre-wrap; background:rgba(0,0,0,0.6); padding:10px; margin:10px; height:180px; overflow-y:auto; border:2px solid #ff4444; border-radius:10px; }
+#choices { display:flex; flex-wrap:wrap; justify-content:center; margin:10px; }
+button { margin:5px; padding:10px 15px; border-radius:8px; background:linear-gradient(#333,#555); color:#fff; border:none; cursor:pointer; transition:0.2s; font-weight:bold; }
+button:hover { box-shadow:0 0 10px #ff4444; transform:scale(1.05); }
+.healthy { filter:none; }
+.injured { filter:brightness(0.7) sepia(0.2); }
+.critical { filter:brightness(0.5) sepia(0.5) hue-rotate(-20deg); }
+.about-to-die { filter:grayscale(0.8) contrast(1.5); }
+.dead { filter:grayscale(1) contrast(0.2) opacity(0.5); }
+#musicControl { position:fixed; top:5px; right:5px; padding:5px 10px; background:#222; border:2px solid #ff4444; cursor:pointer; border-radius:6px; }
+</style>
+</head>
+<body>
+
+<div id="header">🧟 ZOMBZ — Two-Player Zombie Survival</div>
+<div id="location"></div>
+<div id="zombies"></div>
+<div id="team"></div>
+<div id="supplies">
+  Food: <div class="status-bar"><div id="foodBar" class="status-fill" style="background:lime;width:100%"></div></div>
+  Ammo: <div class="status-bar"><div id="ammoBar" class="status-fill" style="background:cyan;width:100%"></div></div>
+  Morale: <div class="status-bar"><div id="moraleBar" class="status-fill" style="background:yellow;width:100%"></div></div>
+  Barricade: <div class="status-bar"><div id="barricadeBar" class="status-fill" style="background:red;width:100%"></div></div>
+</div>
+<div id="log">Welcome to ZOMBZ! David (24) and Chris (27) must lead their family to survive...</div>
+<div id="choices"></div>
+<button onclick="startGame()">Start Game</button>
+<div id="musicControl" onclick="toggleMusic()">Toggle Music</div>
+
+<audio id="bgMusic" autoplay loop>
+  <source src="data:audio/mp3;base64,//YOUR_BASE64_MUSIC_HERE" type="audio/mp3">
+</audio>
+<audio id="sfxClick" src="data:audio/mp3;base64,//BASE64_CLICK"></audio>
+<audio id="sfxZombie" src="data:audio/mp3;base64,//BASE64_ZOMBIE"></audio>
+<audio id="sfxDeath" src="data:audio/mp3;base64,//BASE64_DEATH"></audio>
+<audio id="sfxWin" src="data:audio/mp3;base64,//BASE64_WIN"></audio>
+
+<script>
+const locations = [
+  {name:"Suburban House", bg:"data:image/png;base64,//BASE64_HOUSE"},
+  {name:"Abandoned Mall", bg:"data:image/png;base64,//BASE64_MALL"},
+  {name:"Gas Station", bg:"data:image/png;base64,//BASE64_GAS"},
+  {name:"Hospital", bg:"data:image/png;base64,//BASE64_HOSPITAL"}
+];
+
+const survivorsData = [
+  {name:'Raul', role:'Engineer', hp:3, state:'Healthy', alive:true, img:'data:image/png;base64,//BASE64_RAUL', influence:0.2},
+  {name:'Tamara', role:'Nurse', hp:3, state:'Healthy', alive:true, img:'data:image/png;base64,//BASE64_TAMARA', influence:0.2},
+  {name:'Chris', role:'Nurse', hp:3, state:'Healthy', alive:true, img:'data:image/png;base64,//BASE64_CHRIS', main:true},
+  {name:'David', role:'Data Analyst', hp:3, state:'Healthy', alive:true, img:'data:image/png;base64,//BASE64_DAVID', main:true}
+];
+
+let game, currentPlayerIndex=0, players=['David','Chris'];
+
+function startGame(){
+  game = {
+    day:1,
+    location:locations[Math.floor(Math.random()*locations.length)],
+    food:6, ammo:6, medkits:2, barricade:2, morale:3,
+    survivors: JSON.parse(JSON.stringify(survivorsData))
+  };
+  document.getElementById('location').style.backgroundImage = `url(${game.location.bg})`;
+  log(`Day 1 begins at ${game.location.name}. Your family must survive!`);
+  updateUI();
+  nextTurn();
+}
+
+function log(text){document.getElementById('log').innerText+="\n"+text; const logDiv=document.getElementById('log'); logDiv.scrollTop=logDiv.scrollHeight;}
+function updateUI(){
+  const foodPct=Math.min(100,(game.food/6)*100);
+  const ammoPct=Math.min(100,(game.ammo/6)*100);
+  const moralePct=Math.min(100,(game.morale/5)*100);
+  const barricadePct=Math.min(100,(game.barricade/5)*100);
+  document.getElementById('foodBar').style.width=foodPct+'%';
+  document.getElementById('ammoBar').style.width=ammoPct+'%';
+  document.getElementById('moraleBar').style.width=moralePct+'%';
+  document.getElementById('barricadeBar').style.width=barricadePct+'%';
+  const teamDiv=document.getElementById('team'); teamDiv.innerHTML='';
+  game.survivors.forEach(s=>{
+    const div=document.createElement('div');
+    div.className='portrait '+s.state.toLowerCase().replace(/ /g,'-');
+    div.innerHTML=`<img src="${s.img}" title="${s.name} (${s.state})">`;
+    teamDiv.appendChild(div);
+  });
+}
+
+function nextTurn(){
+  if(currentPlayerIndex>=players.length){currentPlayerIndex=0; endDay(); return;}
+  const player=players[currentPlayerIndex];
+  log(`It is ${player}'s turn to make a decision.`);
+  showChoices([
+    {label:'Scavenge', fn
