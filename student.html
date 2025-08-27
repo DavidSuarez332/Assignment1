@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Effort Quiz 📚</title>
+  <style>
+    body {
+      font-family: "Trebuchet MS", sans-serif;
+      background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background 0.5s ease;
+    }
+    .quiz-container {
+      background: #fff;
+      border-radius: 16px;
+      padding: 25px;
+      width: 650px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      text-align: center;
+      animation: pulse 1.5s infinite alternate;
+    }
+    @keyframes pulse {
+      from { box-shadow: 0 0 10px #ff00ff; }
+      to { box-shadow: 0 0 30px #00ffff; }
+    }
+    h1 {
+      color: #0056b3;
+      text-shadow: 2px 2px #ffcc00;
+    }
+    .question {
+      font-size: 1.3em;
+      margin: 20px 0;
+      color: #333;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .options button {
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #ff6f61;
+      color: #fff;
+      font-size: 1em;
+      transition: 0.3s;
+    }
+    .options button:hover {
+      background: #ffcc00;
+      color: #000;
+    }
+    #nextBtn {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.1em;
+      display: none;
+    }
+    #nextBtn:hover {
+      background: #218838;
+    }
+    .result {
+      font-size: 1.4em;
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 12px;
+      background: #f0f8ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-container">
+    <h1>📚 Study Effort Quiz 📚</h1>
+    <div id="quiz">
+      <div class="question" id="question">Loading question...</div>
+      <div class="options" id="options"></div>
+      <button id="nextBtn" onclick="nextQuestion()">Next ➡️</button>
+    </div>
+    <div id="result" class="result" style="display:none;"></div>
+  </div>
+
+  <!-- Sound Effects -->
+  <audio id="clickSound">
+    <source src="https://www.fesliyanstudios.com/play-mp3/387" type="audio/mpeg">
+  </audio>
+  <audio id="rightSound">
+    <source src="https://www.fesliyanstudios.com/play-mp3/6673" type="audio/mpeg">
+  </audio>
+  <audio id="wrongSound">
+    <source src="https://www.fesliyanstudios.com/play-mp3/4387" type="audio/mpeg">
+  </audio>
+
+<script>
+const quizData = [
+  { question: "How often do you review your notes after class?", options: [
+      {text: "Every day ✅", score: 2},
+      {text: "A few times a week 📖", score: 1},
+      {text: "Almost never 😬", score: 0}
+  ]},
+  { question: "Do you complete homework on time?", options: [
+      {text: "Always on time 🕒", score: 2},
+      {text: "Most of the time 👍", score: 1},
+      {text: "Rarely... 😓", score: 0}
+  ]},
+  { question: "How do you prepare for tests?", options: [
+      {text: "I study consistently 📅", score: 2},
+      {text: "I cram last minute ⏳", score: 1},
+      {text: "I don’t really prepare 🙈", score: 0}
+  ]},
+  { question: "Do you ask questions in class if you don’t understand?", options: [
+      {text: "Yes, often 💡", score: 2},
+      {text: "Sometimes 🤔", score: 1},
+      {text: "No, never 😶", score: 0}
+  ]},
+  { question: "How much time do you dedicate daily to studying?", options: [
+      {text: "More than 2 hours ⏰", score: 2},
+      {text: "Around 1 hour 📘", score: 1},
+      {text: "Barely any 😴", score: 0}
+  ]},
+  { question: "Do you avoid distractions (like your phone) while studying?", options: [
+      {text: "Yes, I stay focused 📵", score: 2},
+      {text: "Sometimes... 😅", score: 1},
+      {text: "Not at all 📱", score: 0}
+  ]},
+  { question: "Do you take breaks during study sessions?", options: [
+      {text: "Yes, short and effective breaks ⏸️", score: 2},
+      {text: "Sometimes 🛋️", score: 1},
+      {text: "I just push through or get distracted 😵", score: 0}
+  ]},
+  { question: "Do you create summaries or flashcards?", options: [
+      {text: "Yes, often ✍️", score: 2},
+      {text: "Occasionally 🗂️", score: 1},
+      {text: "No, never 📄", score: 0}
+  ]},
+  { question: "How do you handle procrastination?", options: [
+      {text: "I avoid it with planning 📆", score: 2},
+      {text: "I sometimes procrastinate 🤷", score: 1},
+      {text: "Procrastination is my life 😬", score: 0}
+  ]},
+  { question: "Do you study with friends or groups?", options: [
+      {text: "Yes, regularly 👥", score: 2},
+      {text: "Sometimes 🙋", score: 1},
+      {text: "No, never 🚫", score: 0}
+  ]},
+  { question: "Do you get enough sleep before important exams?", options: [
+      {text: "Always, I prioritize rest 🛌", score: 2},
+      {text: "Sometimes 😴", score: 1},
+      {text: "No, I usually stay up all night 🕛", score: 0}
+  ]},
+  { question: "Do you track your grades and progress?", options: [
+      {text: "Yes, I monitor closely 📊", score: 2},
+      {text: "Sometimes 📋", score: 1},
+      {text: "Not really 🤷", score: 0}
+  ]},
+  { question: "Do you ask teachers/professors for feedback?", options: [
+      {text: "Yes, often 🙌", score: 2},
+      {text: "Sometimes 🤔", score: 1},
+      {text: "No, never 😶", score: 0}
+  ]},
+  { question: "Do you prepare a study plan before exams?", options: [
+      {text: "Yes, I always make one 📅", score: 2},
+      {text: "Sometimes 📝", score: 1},
+      {text: "No, I just wing it 😬", score: 0}
+  ]},
+  { question: "Do you stay positive and motivated about learning?", options: [
+      {text: "Yes, I love learning 🌟", score: 2},
+      {text: "Sometimes 😐", score: 1},
+      {text: "Not really 😔", score: 0}
+  ]}
+];
+
+let currentQuestion = 0;
+let score = 0;
+
+function loadQuestion() {
+  const questionElement = document.getElementById("question");
+  const optionsElement = document.getElementById("options");
+  const nextBtn = document.getElementById("nextBtn");
+
+  const currentQuiz = quizData[currentQuestion];
+  questionElement.textContent = currentQuiz.question;
+
+  optionsElement.innerHTML = "";
+  currentQuiz.options.forEach((option) => {
+    const button = document.createElement("button");
+    button.textContent = option.text;
+    button.onclick = () => selectOption(option.score);
+    optionsElement.appendChild(button);
+  });
+
+  nextBtn.style.display = "none";
+}
+
+function flashColors() {
+  const colors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"];
+  let i = 0;
+  const interval = setInterval(() => {
+    document.body.style.background = colors[i % colors.length];
+    i++;
+    if (i > 5) {
+      clearInterval(interval);
+      document.body.style.background = "linear-gradient(135deg, #a1c4fd, #c2e9fb)";
+    }
+  }, 150);
+}
+
+function selectOption(optionScore) {
+  score += optionScore;
+  document.querySelectorAll("#options button").forEach(btn => btn.disabled = true);
+  document.getElementById("nextBtn").style.display = "inline-block";
+
+  // Play click sound
+  document.getElementById("clickSound").play();
+
+  // Flash colors
+  flashColors();
+
+  // Right or wrong sound
+  if (optionScore === 2) {
+    document.getElementById("rightSound").play();
+  } else if (optionScore === 0) {
+    document.getElementById("wrongSound").play();
+  }
+}
+
+function nextQuestion() {
+  currentQuestion++;
+  if (currentQuestion < quizData.length) {
+    loadQuestion();
+  } else {
+    showResult();
+  }
+}
+
+function showResult() {
+  document.getElementById("quiz").style.display = "none";
+  const resultDiv = document.getElementById("result");
+  resultDiv.style.display = "block";
+
+  let resultText = "";
+  if (score >= 25) {
+    resultText = "🌟 Amazing! You are studying sufficiently and putting in great effort. Keep it up! 💪";
+  } else if (score >= 15) {
+    resultText = "👍 You're doing okay, but there’s room for improvement. Try setting a regular study schedule!";
+  } else {
+    resultText = "⚠️ It seems like you’re not putting in enough effort. Small changes in your routine can make a big difference!";
+  }
+
+  resultDiv.textContent = resultText;
+}
+
+// Start quiz
+loadQuestion();
+</script>
+</body>
+</html>
