@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>🧪 V I R U S — Survival Rating Quiz</title>
+<style>
+/* =====================================================
+   V I R U S — Survival Rating Quiz
+   - Mobile-first responsive layout
+   - Big neon/flashing title, retro horror vibes
+   - Large buttons and accessible touch controls
+   - Long CSS and JS inline for single-file portability
+   ===================================================== */
+:root{
+  --bg:#040405; --panel:#071018; --neon:#2bff2b; --accent:#ff7b2b; --muted:#9bd;
+  --danger:#ff7b2b; --good:#7be6ff;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,#020204,#071018);font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial,monospace;color:#dfe}
+.container{max-width:1100px;margin:0 auto;padding:14px}
+.header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.title{font-weight:900;font-size:28px;letter-spacing:6px;color:var(--neon);padding:8px 12px;border-radius:8px;text-shadow:0 0 8px rgba(43,255,43,.6)}
+.title.flash{animation:flash 1s linear infinite}
+@keyframes flash{0%{filter:drop-shadow(0 0 6px rgba(43,255,43,.6))}50%{filter:drop-shadow(0 0 20px rgba(43,255,43,1))}100%{filter:drop-shadow(0 0 6px rgba(43,255,43,.6))}}
+.subhead{font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+@media(min-width:960px){ .layout{grid-template-columns:360px 1fr 360px} }
+.panel{background:linear-gradient(180deg,var(--panel),#041018);border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+.small{font-size:13px;color:var(--muted)}
+.big{font-size:16px}
+.question{margin-bottom:10px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02)}
+.options{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+@media(max-width:520px){ .options{grid-template-columns:1fr} }
+.choiceBtn{padding:12px;border-radius:10px;background:linear-gradient(180deg,#0f1b1a,#09201c);color:#dfe;border:1px solid rgba(255,255,255,0.04);text-align:left;cursor:pointer;font-size:15px}
+.choiceBtn.selected{outline:3px solid rgba(123,230,255,0.12);box-shadow:0 6px 20px rgba(0,0,0,.6);transform:translateY(-2px)}
+.progressWrap{background:#021018;border-radius:12px;padding:8px;margin-top:8px}
+.progressBar{height:16px;background:#031212;border-radius:10px;overflow:hidden}
+.progressFill{height:16px;background:linear-gradient(90deg,#ffd86b,#7be6ff);width:0%}
+.resultBox{font-size:18px;padding:12px;border-radius:10px;margin-top:12px;background:rgba(0,0,0,0.06)}
+.flashOutcome{animation:outcomeFlash 1s linear infinite}
+@keyframes outcomeFlash{0%{opacity:1}50%{opacity:0.2}100%{opacity:1}}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{padding:10px 12px;border-radius:10px;background:linear-gradient(90deg,#0e1f21,#062026);color:#dfe;border:1px solid rgba(255,255,255,0.04);cursor:pointer}
+.btn.primary{background:linear-gradient(90deg,var(--neon),#7bf86b);color:#001}
+.btn.warn{background:linear-gradient(90deg,var(--accent),#ffb86b);color:#111}
+.log{height:160px;overflow:auto;background:#03060a;border-radius:8px;padding:8px;color:#bfe;margin-top:8px}
+.legend{display:flex;gap:8px;align-items:center;margin-top:8px}
+.legend .pill{padding:6px 8px;border-radius:6px;background:#011; border:1px solid rgba(255,255,255,0.03)}
+.explain{margin-top:8px;background:rgba(255,255,255,0.02);padding:10px;border-radius:8px}
+.footer{margin-top:10px;font-size:12px;color:var(--muted)}
+.warning{color:var(--danger);font-weight:700}
+.largeText{font-size:22px;font-weight:800}
+.center{text-align:center}
+.shareBox{display:flex;gap:8px;margin-top:8px}
+textarea{width:100%;height:80px;padding:8px;border-radius:8px;background:#011;border:1px solid rgba(255,255,255,0.02);color:#dfe}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <div class="title flash">🧟 V I R U S</div>
+      <div class="subhead">A decision-based survival rating — fast zombies, hard choices, emotional weight</div>
+    </div>
+    <div style="text-align:right">
+      <div class="small">Difficulty: <strong>Brutal</strong></div>
+      <div class="small">Mode: Thoughtful / Moral / Tactical</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- LEFT: info & legend -->
+    <div class="panel">
+      <div class="big">How it works</div>
+      <p class="small">You will answer <strong>20</strong> hard, morally-charged and survival-oriented questions. Each question has 6 choices (a–f). Each choice is rated 0–5 (0 worst, 5 best). Your total across 20 questions (max 100) maps to a survival outcome (from <strong>0 days</strong> to <strong>30 years</strong>).</p>
+      <div style="margin-top:8px" class="legend">
+        <div class="pill">0 — Worst choice (panic, selfish, dangerous)</div>
+        <div class="pill">5 — Best choice (strategic, safe, sustainable)</div>
+      </div>
+      <div style="margin-top:12px" class="small">Scenarios probe: emotional response, group vs loneliness, sacrifice, resource triage, trust, medical ethics, stealth vs violence, navigation, mental strength.</div>
+
+      <div style="margin-top:12px" class="small"><strong>Fast zombies note:</strong> zombies in this game are modeled like pop-culture fast zombies — quick, aggressive, pack-hunters. Attacking them is rarely the optimal choice.</div>
+      <div style="margin-top:12px" class="small warning">This quiz is thought-provoking — some scenarios involve morally difficult choices and loss. No graphic descriptions are shown.</div>
+    </div>
+
+    <!-- CENTER: questions -->
+    <div class="panel" id="quizPanel">
+      <div class="big">Questionnaire</div>
+      <div class="small">Answer honestly — each selection contributes a score (0–5). When finished, press <strong>Calculate Survival</strong> to get your outcome and see explanations.</div>
+
+      <div style="margin-top:12px" class="progressWrap">
+        <div class="small">Progress — answered <span id="answeredCount">0</span>/20</div>
+        <div class="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="20">
+          <div class="progressFill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div id="questionsArea" style="margin-top:12px"></div>
+
+      <div class="controls">
+        <button id="calcBtn" class="btn primary">Calculate Survival 🧮</button>
+        <button id="reviewBtn" class="btn">Review Answers 🔍</button>
+        <button id="resetBtn" class="btn warn">Reset Quiz ↺</button>
+      </div>
+
+      <div id="resultArea" style="margin-top:12px"></div>
+    </div>
+
+    <!-- RIGHT: log, share, explanations -->
+    <div class="panel">
+      <div class="big">Event Log & Explanation</div>
+      <div class="log" id="eventLog"></div>
+
+      <div class="explain" id="explainBox">
+        <div class="small">When you calculate survival, a per-question rationale will appear here showing how choices impact long-term survival.</div>
+      </div>
+
+      <div style="margin-top:8px" class="shareBox">
+        <button id="copyResultBtn" class="btn">Copy Result</button>
+        <button id="downloadBtn" class="btn">Download Report</button>
+      </div>
+
+      <div style="margin-top:12px" class="footer">Built to provoke reflection — this simulation is not predictive. It weighs choices across many survival domains and expresses a single aggregated outcome.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+ function displayResult(){
+  calculateTotal();
+  const tier = getSurvivalTier(totalScore);
+  const resultArea = document.getElementById('resultArea');
+  resultArea.innerHTML = '';
+  const box = document.createElement('div');
+  box.className = 'resultBox center';
+  box.innerHTML = `
+    <div class="largeText">You survived: <span style="color:var(--neon);font-weight:900">${tier.outcome} 🏆</span></div>
+    <div style="margin-top:8px" class="small">Your choices have been interpreted — resourcefulness, moral judgment, and tactical skill all contributed.</div>
+  `;
+  resultArea.appendChild(box);
+
+  const explanation = document.getElementById('explainBox');
+  explanation.innerHTML = buildExplanationHTML();
+
+  logEvent(`<div style="font-weight:800">FINAL: Survived ${tier.outcome}
+
+];
+
+/* ===========================================================
+   Full Quiz Data + Logic
+   - 20 questions
+   - Each question: 6 options (a-f) mapped to scores 0..5
+   - Explanations for each option
+   - Final mapping (0..100) -> 24-tier survival outcomes
+   =========================================================== */
+
+/* ---------- QUESTIONS DEFINITION ---------- 
+   Each question object:
+     { id, text, options: [ { key:'a', text:'...', score:0..5, explanation:'...' }, ... ] }
+*/
+<!-- Keep your existing HTML & CSS unchanged up to the QUESTIONS array -->
+
+<script>
+/* ---------- QUESTIONS DEFINITION WITH EMOJIS ---------- */
+const QUESTIONS = [
+  {
+    id:1,
+    text:"💧 You are running low on water. What do you do first?",
+    options:[
+      {k:'a', text:"Check the gas station nearby for bottled water (risky, public place).", score:3, explanation:"Gas stations can have supplies but are high risk — useful if quick and stealthy."},
+      {k:'b', text:"Inspect your house thoroughly for stored water and containers.", score:5, explanation:"Conserving and finding existing resources is efficient and low-risk."},
+      {k:'c', text:"Inspect your car and emergency kit for spare water.", score:4, explanation:"Cars often hide useful supplies — good quick option if vehicle is intact."},
+      {k:'d', text:"Leave buckets outside and pray for rain.", score:1, explanation:"Relying on rain is unreliable and wastes precious time when immediate action is needed."},
+      {k:'e', text:"Boil local lake/pond water and treat it (if you have capability).", score:5, explanation:"Treating local water is strong when you can boil/filter — sustainable and practical."},
+      {k:'f', text:"Raid neighboring houses for water (forceful, risky).", score:0, explanation:"Raiding others is morally costly, attracts attention, and invites retaliation."}
+    ]
+  },
+
+  {
+    id:2,
+    text:"👶 A stranger knocks and claims to have medicine for your sick child. They ask to come in. You are alone with the group. What do you do?",
+    options:[
+      {k:'a', text:"Let them in immediately — you need the medicine.", score:0, explanation:"Immediate trust is extremely risky; strangers could be deceitful or dangerous."},
+      {k:'b', text:"Stay behind a barricade and ask for proof before deciding.", score:4, explanation:"Demanding evidence and keeping distance reduces risk while gathering info."},
+      {k:'c', text:"Send one person to meet them outside while others stand guard.", score:3, explanation:"Sending a single representative balances caution and outreach, but is risky."},
+      {k:'d', text:"Refuse outright and prepare to defend (no negotiation).", score:1, explanation:"Hostility cuts off possible help and can escalate conflict unnecessarily."},
+      {k:'e', text:"Offer to trade food at a distance in exchange for medicine and call it a day.", score:5, explanation:"Controlled trade at distance is practical and keeps risk lower."},
+      {k:'f', text:"Pretend to be asleep and ignore them.", score:2, explanation:"Ignoring may avoid immediate risk but loses potential needed help."}
+    ]
+  },
+
+  {
+    id:3,
+    text:"🏃‍♂️ You spot a fast-running horde across the street heading towards your area. You have limited time. What is your best move?",
+    options:[ /* unchanged options */ ]
+  },
+
+  /* ... repeat for all 20 questions, adding emojis to text like ⚔️, 🏠, 🚗, 🌌, 🍽️, 🩹, ⚡, 🧍‍♂️ ... etc. */
+];
+
+const QUESTIONS = [
+  {
+    id:1,
+    text:"You are running low on water. What do you do first?",
+    options:[
+      {k:'a', text:"Check the gas station nearby for bottled water (risky, public place).", score:3, explanation:"Gas stations can have supplies but are high risk — useful if quick and stealthy."},
+      {k:'b', text:"Inspect your house thoroughly for stored water and containers.", score:5, explanation:"Conserving and finding existing resources is efficient and low-risk."},
+      {k:'c', text:"Inspect your car and emergency kit for spare water.", score:4, explanation:"Cars often hide useful supplies — good quick option if vehicle is intact."},
+      {k:'d', text:"Leave buckets outside and pray for rain.", score:1, explanation:"Relying on rain is unreliable and wastes precious time when immediate action is needed."},
+      {k:'e', text:"Boil local lake/pond water and treat it (if you have capability).", score:5, explanation:"Treating local water is strong when you can boil/filter — sustainable and practical."},
+      {k:'f', text:"Raid neighboring houses for water (forceful, risky).", score:0, explanation:"Raiding others is morally costly, attracts attention, and invites retaliation."}
+    ]
+  },
+
+  {
+    id:2,
+    text:"A stranger knocks and claims to have medicine for your sick child. They ask to come in. You are alone with the group. What do you do?",
+    options:[
+      {k:'a', text:"Let them in immediately — you need the medicine.", score:0, explanation:"Immediate trust is extremely risky; strangers could be deceitful or dangerous."},
+      {k:'b', text:"Stay behind a barricade and ask for proof before deciding.", score:4, explanation:"Demanding evidence and keeping distance reduces risk while gathering info."},
+      {k:'c', text:"Send one person to meet them outside while others stand guard.", score:3, explanation:"Sending a single representative balances caution and outreach, but is risky."},
+      {k:'d', text:"Refuse outright and prepare to defend (no negotiation).", score:1, explanation:"Hostility cuts off possible help and can escalate conflict unnecessarily."},
+      {k:'e', text:"Offer to trade food at a distance in exchange for medicine and call it a day.", score:5, explanation:"Controlled trade at distance is practical and keeps risk lower."},
+      {k:'f', text:"Pretend to be asleep and ignore them.", score:2, explanation:"Ignoring may avoid immediate risk but loses potential needed help."}
+    ]
+  },
+
+  {
+    id:3,
+    text:"You spot a fast-running horde across the street heading towards your area. You have limited time. What is your best move?",
+    options:[
+      {k:'a', text:"Run to your car and try to drive away with everyone and supplies.", score:2, explanation:"Vehicles can help but are noisy and can get stuck in traffic or fail."},
+      {k:'b', text:"Hide quietly at home and seal all entrances while rationing supplies.", score:4, explanation:"Good defensive posture if the house is defensible and supplies are adequate."},
+      {k:'c', text:"Make noise to draw them away from the house then sneak out.", score:0, explanation:"Attracting a fast horde is almost always disastrous — very poor choice."},
+      {k:'d', text:"Signal for help with a flare or radio (risk drawing attention).", score:1, explanation:"Signaling may attract allies but is extremely dangerous now."},
+      {k:'e', text:"Split the group: some distract while others escape (sacrifice possible).", score:1, explanation:"Sacrifices may save some but risk moral corruption and practical failure."},
+      {k:'f', text:"Leave quietly at night via an alternate route you scouted earlier.", score:5, explanation:"Planned stealthy relocation using prior reconnaissance is optimal."}
+    ]
+  },
+
+  {
+    id:4,
+    text:"Your group must choose a leader for resource decisions. Who should lead?",
+    options:[
+      {k:'a', text:"The most physically strong member.", score:2, explanation:"Strength helps in combat but doesn't guarantee good strategic choices."},
+      {k:'b', text:"The most medically knowledgeable member.", score:4, explanation:"Medical skills matter for survival and morale, a strong choice."},
+      {k:'c', text:"The calmest, most emotionally stable member.", score:5, explanation:"Emotional leadership maintains cohesion and rationality in crises."},
+      {k:'d', text:"The one who shouts the loudest and appears confident.", score:0, explanation:"Confidence without competence often leads groups into danger."},
+      {k:'e', text:"Rotate leadership each week by vote.", score:3, explanation:"Shared leadership can be good, but slow in urgent crises unless well-managed."},
+      {k:'f', text:"Let whoever owns the most resources decide.", score:1, explanation:"Resource-based power creates resentment and poor long-term cohesion."}
+    ]
+  },
+
+  {
+    id:5,
+    text:"A group of desperate survivors asks to join your camp. They are more than you can comfortably feed. Do you:",
+    options:[
+      {k:'a', text:"Invite all of them in — strength in numbers.", score:2, explanation:"Numbers help with defense but strain supplies and may introduce problems."},
+      {k:'b', text:"Accept only those who have useful skills (medical, mechanical).", score:5, explanation:"Selective inclusion increases resilience and retains resources."},
+      {k:'c', text:"Refuse everyone — keep strict small group.", score:3, explanation:"Conservative but may miss critical allies and skills."},
+      {k:'d', text:"Accept them but require strict work-for-food rules.", score:4, explanation:"Structured inclusion balances risk and contribution."},
+      {k:'e', text:"Lure them in and then rob them for supplies.", score:0, explanation:"Predatory behavior destroys morale and is ethically wrong and dangerous."},
+      {k:'f', text:"Offer them temporary shelter outside the walls but not full entry.", score:4, explanation:"A compromise that provides help but limits resource drain."}
+    ]
+  },
+
+  {
+    id:6,
+    text:"You find a small first-aid kit and a chance to use it now or save it. Which do you choose?",
+    options:[
+      {k:'a', text:"Use it immediately to patch minor wounds for morale.", score:4, explanation:"Treating wounds prevents infection and keeps morale up."},
+      {k:'b', text:"Save it for a worst-case major injury.", score:3, explanation:"Conserving is logical but risky if small infections escalate."},
+      {k:'c', text:"Trade it for food with a passing stranger.", score:1, explanation:"Giving away meds is often a losing trade; medicines are invaluable."},
+      {k:'d', text:"Discard it — rely on home remedies.", score:0, explanation:"Discarding medical help is poor survival judgment."},
+      {k:'e', text:"Use it to treat a stranger in exchange for shelter info.", score:5, explanation:"Strategic use that builds alliances and gains intelligence."},
+      {k:'f', text:"Hide it for yourself later.", score:2, explanation:"Hoarding hurts group trust and long-term cohesion."}
+    ]
+  },
+
+  {
+    id:7,
+    text:"Your vehicle has a limited amount of fuel. You must choose where to use it:",
+    options:[
+      {k:'a', text:"Evacuate to a rural cabin you know (fuel cost high).", score:5, explanation:"A prepared rural fallback can be a true lifeline if defensible."},
+      {k:'b', text:"Use it to drive into the city to scavenge supplies.", score:1, explanation:"City trips are high risk and often yield limited net gain."},
+      {k:'c', text:"Keep fuel for an eventual rescue and stay put.", score:4, explanation:"Conservation is smart if rescue is plausible."},
+      {k:'d', text:"Trade fuel for leadership favors with another group.", score:0, explanation:"Fuel is a high-value resource — trading away is usually unwise."},
+      {k:'e', text:"Split the fuel usage: send one scouting run tonight.", score:3, explanation:"Partial usage may help but still risks resources on a single trip."},
+      {k:'f', text:"Run the engine intermittently to keep battery charged but stay local.", score:2, explanation:"A small benefit but drains fuel slowly with limited gain."}
+    ]
+  },
+
+  {
+    id:8,
+    text:"A sick elder must be moved. Risk moving them through the streets or leave them in place?",
+    options:[
+      {k:'a', text:"Move them immediately through crowded streets.", score:0, explanation:"Exposing a vulnerable person in crowds invites catastrophe."},
+      {k:'b', text:"Leave them with supplies and try to send someone back later.", score:2, explanation:"Abandonment risks worse outcomes; only okay if rescue likely."},
+      {k:'c', text:"Create a safe room in the house and care for them there.", score:5, explanation:"Caring for the vulnerable increases group cohesion and preserves life."},
+      {k:'d', text:"Attempt to drug them and move quietly at night.", score:1, explanation:"Risky and ethically questionable — could harm the elder."},
+      {k:'e', text:"Ask for outside help from other survivors/medics.", score:4, explanation:"Reaching out is good if you vet help and trade carefully."},
+      {k:'f', text:"Hand them off to a stranger who promises care.", score:0, explanation:"Trusting strangers wholesale with vulnerable people is dangerous."}
+    ]
+  },
+
+  {
+    id:9,
+    text:"Night falls and noises approach. You must decide immediate lights/noise policy.",
+    options:[
+      {k:'a', text:"Turn all lights on to intimidate and scare potential threats.", score:0, explanation:"Lights attract attention; rarely a good idea at night."},
+      {k:'b', text:"Keep lights off and maintain strict quiet; use lookouts.", score:5, explanation:"Stealth and watchfulness preserves safety at night."},
+      {k:'c', text:"Light a single controlled fire outside to cook and gauge friendly groups.", score:2, explanation:"Can be useful but draws attention and invites trade-offs."},
+      {k:'d', text:"Make loud noises to scare off animals/zombies.", score:1, explanation:"Loud noise often escalates danger with fast hordes."},
+      {k:'e', text:"Move people to sleeping shifts and rest minimal staff as lookouts.", score:4, explanation:"Rotating watch is practical and sustainable."},
+      {k:'f', text:"Abandon the house under cover of night to avoid detection.", score:3, explanation:"Sometimes necessary but risky if not planned."}
+    ]
+  },
+
+  {
+    id:10,
+    text:"You find a locked pantry in a neighbor's house while scavenging. No one seems home. What do you do?",
+    options:[
+      {k:'a', text:"Break in and take everything now.", score:0, explanation:"Immediate looting invites moral degradation and potential retaliation."},
+      {k:'b', text:"Leave it; respect property and move on.", score:2, explanation:"Respectful but may miss resources needed to survive."},
+      {k:'c', text:"Try to pick lock quietly and leave signs you were there.", score:1, explanation:"Illegal and risky; marking increases chance of consequences."},
+      {k:'d', text:"Take only what you need and leave a note offering help in return.", score:4, explanation:"Compromise that preserves ethics and secures allies if neighbors return."},
+      {k:'e', text:"Attempt to contact neighbors to barter.", score:5, explanation:"Barter builds trust and preserves community resources when possible."},
+      {k:'f', text:"Burn the house down to deny others resources.", score:0, explanation:"Destructive, immoral, and strategically counterproductive."}
+    ]
+  },
+
+  {
+    id:11,
+    text:"Your group debates whether to booby-trap the property. What is your stance?",
+    options:[
+      {k:'a', text:"Set lethal traps around the perimeter to deter intruders.", score:0, explanation:"Lethal traps risk killing non-hostiles and harm group ethics."},
+      {k:'b', text:"Set non-lethal alarms and trip alerts to warn you.", score:5, explanation:"Early-warning systems reduce risk and avoid unnecessary lethal outcomes."},
+      {k:'c', text:"Rely on armed patrols instead of traps.", score:3, explanation:"Patrols work but cost energy and risk patrols' lives."},
+      {k:'d', text:"Do nothing; traps are immoral and risky.", score:2, explanation:"Inaction may invite easily preventable breaches."},
+      {k:'e', text:"Booby-trap some areas but clearly mark them for allies.", score:1, explanation:"Marking undermines secrecy; mixed strategy is confusing."},
+      {k:'f', text:"Entrench with fortifications and passive obstacles (non-lethal).", score:4, explanation:"Physical defenses that deter without killing are balanced choice."}
+    ]
+  },
+
+  {
+    id:12,
+    text:"You have the option to risk a small team to retrieve medical supplies from a nearby clinic (dangerous). The team size affects probability. What plan do you choose?",
+    options:[
+      {k:'a', text:"Send one quick scout alone (fast but vulnerable).", score:2, explanation:"Small scout can be nimble but easily overwhelmed."},
+      {k:'b', text:"Send a well-armed team of many (more chance of success but visible).", score:3, explanation:"Numbers help but attract enemies and cost resources."},
+      {k:'c', text:"Negotiate with a local group for a trade instead of a raid.", score:5, explanation:"Trading minimizes direct risk and builds alliances."},
+      {k:'d', text:"Avoid the clinic entirely and hope others bring supplies.", score:1, explanation:"Passive waiting often fails; medicines are rare and crucial."},
+      {k:'e', text:"Approach at night with stealth gear and small team.", score:4, explanation:"Well-executed stealth reduces risk and can be highly effective."},
+      {k:'f', text:"Use explosive distraction to draw away threats then grab supplies.", score:0, explanation:"Explosives are unpredictable and likely to escalate catastrophically."}
+    ]
+  },
+
+  {
+    id:13,
+    text:"A member of your group is injured but alive. They plead not to be left. Resources are limited. What is your move?",
+    options:[
+      {k:'a', text:"Provide palliative care; keep them in the camp and share supplies.", score:5, explanation:"Preserving life fosters trust and cohesion — ethically strong."},
+      {k:'b', text:"Leave them with minimal supplies and hope they survive.", score:2, explanation:"Partial help may not be sufficient and can breed guilt."},
+      {k:'c', text:"Prioritize the strongest and let the injured go.", score:0, explanation:"Abandoning the vulnerable destroys group trust and morale."},
+      {k:'d', text:"Request a volunteer to escort them to a safer facility (if any).", score:4, explanation:"Seeking help spreads responsibility and may save lives."},
+      {k:'e', text:"Use the meds to attempt a risky operation (chance-based).", score:3, explanation:"High risk might save or kill — gamble with consents and skill."},
+      {k:'f', text:"Make a group vote to determine the outcome.", score:3, explanation:"Democratic decisions can be slow but share accountability."}
+    ]
+  },
+
+  {
+    id:14,
+    text:"Food is dwindling. It's between rationing or hunting raids. Which do you choose?",
+    options:[
+      {k:'a', text:"Strictly ration to stretch supplies as long as possible.", score:5, explanation:"Conservative rationing preserves lives and prevents risky exposure."},
+      {k:'b', text:"Conduct frequent raids for high returns.", score:0, explanation:"Aggressive raids are loud, dangerous and often counterproductive."},
+      {k:'c', text:"Rotate small hunting parties with camouflage and stealth.", score:4, explanation:"Small, controlled operations balance risk and reward."},
+      {k:'d', text:"Forage for local edible plants and roots.", score:3, explanation:"Foraging supplements diet but requires knowledge and care."},
+      {k:'e', text:"Sacrifice a non-essential group member (dark option).", score:0, explanation:"Morally catastrophic and destabilizing."},
+      {k:'f', text:"Attempt to trade labor/services for food with other groups.", score:4, explanation:"Bartering preserves ethics and provides steady resources."}
+    ]
+  },
+
+  {
+    id:15,
+    text:"You encounter a suspicious but well-armed group who propose a 'mutual defense pact' with strict demands. Do you:",
+    options:[
+      {k:'a', text:"Agree to all demands for immediate safety.", score:1, explanation:"Immediate safety may come at long-term autonomy cost."},
+      {k:'b', text:"Refuse and prepare to fight.", score:0, explanation:"Open conflict is risky against an unknown armed group."},
+      {k:'c', text:"Negotiate terms, insisting on equal resource sharing and nonviolence.", score:5, explanation:"Negotiation preserves dignity and aims for sustainable cooperation."},
+      {k:'d', text:"Feign agreement to sabotage later.", score:0, explanation:"Deceit escalates violence and breaks trust."},
+      {k:'e', text:"Offer a temporary limited alliance with exit clauses.", score:4, explanation:"Temporary pacts can be pragmatic if well-specified."},
+      {k:'f', text:"Walk away quietly and avoid commitment.", score:3, explanation:"Avoids risks but misses potential security benefits."}
+    ]
+  },
+
+  {
+    id:16,
+    text:"You have an opportunity to access an abandoned airstrip rumored to have a small plane. What is your plan?",
+    options:[
+      {k:'a', text:"Try to repair and fly out immediately (difficult and needs fuel).", score:3, explanation:"Escape by air is tempting but requires fuel/skills and introduces risk."},
+      {k:'b', text:"Use the airstrip as a lookout and beacon for rescue without flying.", score:4, explanation:"Using the area strategically while conserving resources is sensible."},
+      {k:'c', text:"Loot the airstrip and dismantle parts for trade.", score:2, explanation:"Dismantling may yield parts but loses possibility of evacuation."},
+      {k:'d', text:"Block the runway to prevent others using it against you.", score:1, explanation:"Denial tactics are resource-consuming and provoke enemies."},
+      {k:'e', text:"Set up a guarded supply depot and share intel with allies.", score:5, explanation:"Creating a hub builds alliances and retains escape options."},
+      {k:'f', text:"Ignore it; it's too risky.", score:2, explanation:"Avoidance wastes potential escape and intelligence opportunities."}
+    ]
+  },
+
+  {
+    id:17,
+    text:"Your group debates transitioning from defensive to offensive posture to clear local threats. You:",
+    options:[
+      {k:'a', text:"Launch sustained offensive raids to clear the area.", score:0, explanation:"Sustained offensives drain resources and invite retaliation with little lasting gain."},
+      {k:'b', text:"Keep strictly defensive unless directly threatened.", score:4, explanation:"Defensive posture conserves resources but must be adaptive."},
+      {k:'c', text:"Use targeted surgical strikes with precise intel.", score:5, explanation:"Targeted, intelligence-driven actions minimize risk and achieve goals."},
+      {k:'d', text:"Rely on traps and passive defenses instead.", score:3, explanation:"Passive defenses are useful but can't eliminate persistent threats."},
+      {k:'e', text:"Try to negotiate peace with local factions.", score:4, explanation:"Diplomacy reduces conflict but requires trust and enforcement."},
+      {k:'f', text:"Surrender territory and relocate elsewhere.", score:2, explanation:"Relocation might be safe short-term but costs infrastructure."}
+    ]
+  },
+
+  {
+    id:18,
+    text:"A child is traumatized and refuses to cooperate; morale sinks. What action best helps?",
+    options:[
+      {k:'a', text:"Ignore them — focus on survival tasks (tough love).", score:0, explanation:"Neglect harms the child's recovery and group wellbeing."},
+      {k:'b', text:"Try immediate psychological support (talk, comfort, routine).", score:5, explanation:"Emotional care preserves long-term resilience and cohesion."},
+      {k:'c', text:"Assign chores to distract them and regain routine.", score:3, explanation:"Structure helps but may not address trauma fully."},
+      {k:'d', text:"Send them to relatives elsewhere (if any).", score:2, explanation:"Separation may worsen trauma and disrupt bonds."},
+      {k:'e', text:"Use mild sedatives to calm them temporarily.", score:1, explanation:"Drugs without therapy are risky and ethically fraught."},
+      {k:'f', text:"Let the child choose whether to help or not.", score:3, explanation:"Autonomy helps some children but may not provide needed guidance."}
+    ]
+  },
+
+  {
+    id:19,
+    text:"You come across technical documents hinting at the outbreak’s origin (sensitive info). You can reveal it or hide it. What now?",
+    options:[
+      {k:'a', text:"Release documents widely to the public (transparency).", score:1, explanation:"Transparency can cause panic if context is missing."},
+      {k:'b', text:"Share with vetted scientific/medical contacts only.", score:5, explanation:"Controlled sharing can help research without causing chaos."},
+      {k:'c', text:"Hide them — use them to bargain for safety.", score:0, explanation:"Using sensitive info for leverage is unethical and dangerous."},
+      {k:'d', text:"Attempt to use the info to start your own cure efforts.", score:3, explanation:"Grassroots research helps but needs resources and expertise."},
+      {k:'e', text:"Donate them to a trusted institution (if any remain).", score:4, explanation:"Giving to trusted institutions aids coordinated response."},
+      {k:'f', text:"Burn the docs to avoid any attention.", score:2, explanation:"Destroying knowledge surrenders any chance to heal broadly."}
+    ]
+  },
+
+  {
+    id:20,
+    text:"At last: you must choose what success looks like for your group (long-term aim). Which do you pick?",
+    options:[
+      {k:'a', text:"Survive anywhere for as long as possible (individual isolation).", score:2, explanation:"Isolation may extend survival for a time but lacks sustainability."},
+      {k:'b', text:"Rebuild community and share resources with allies.", score:5, explanation:"Community rebuilding is the most sustainable and humane long-term objective."},
+      {k:'c', text:"Find a cure and focus resources on research.", score:4, explanation:"Cure pursuit benefits all but requires great risk and resources."},
+      {k:'d', text:"Seize local power and create a fortress state.", score:1, explanation:"Authoritarian survival comes with heavy moral and safety costs."},
+      {k:'e', text:"Search for rescue/evacuation and try to rejoin wider civilization.", score:3, explanation:"Seeking rescue is good but risky and often unreliable."},
+      {k:'f', text:"Accept slow decline and focus on quality of life now.", score:0, explanation:"Resignation sacrifices future survivability and opportunity."}
+    ]
+  }
+]; // end QUESTIONS
+
+/* ---------- SURVIVAL TIERS (24 outcomes) ----------
+   We'll map totalScore (0..100) to one of the 24 outcomes the user listed.
+   Use index = Math.round(score * (n-1) / 100)
+*/
+const SURVIVAL_TIERS = [
+  "0 days",
+  "3 days",
+  "5 days",
+  "8 days",
+  "12 days",
+  "25 days",
+  "28 days",
+  "30 days",
+  "55 days",
+  "60 days",
+  "92 days",
+  "95 days",
+  "109 days",
+  "140 days",
+  "210 days",
+  "364 days",
+  "365 days",
+  "2 years",
+  "3 years",
+  "5 years",
+  "6 years",
+  "10 years",
+  "20 years",
+  "30 years"
+];
+
+/* ---------- APPLICATION STATE ---------- */
+let answers = {}; // answers[q.id] = option.k
+let scoreByQuestion = {}; // scoreByQuestion[q.id] = numeric score
+let totalScore = 0;
+
+/* ---------- RENDERING QUESTIONS ---------- */
+const questionsArea = document.getElementById('questionsArea');
+const progressFill = document.getElementById('progressFill');
+const answeredCountEl = document.getElementById('answeredCount');
+const eventLog = document.getElementById('eventLog');
+
+function renderAllQuestions(){
+  questionsArea.innerHTML = '';
+  for(const q of QUESTIONS){
+    const qDiv = document.createElement('div');
+    qDiv.className = 'question';
+    qDiv.id = 'q' + q.id;
+    qDiv.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>Q${q.id}.</strong> ${q.text}</div><div class="small">Pick one</div></div>`;
+    const optionsDiv = document.createElement('div');
+    optionsDiv.className = 'options';
+    for(const opt of q.options){
+      const btn = document.createElement('button');
+      btn.className = 'choiceBtn';
+      btn.dataset.q = q.id;
+      btn.dataset.k = opt.k;
+      btn.innerHTML = `<div style="font-weight:700">${opt.k.toUpperCase()}. ${opt.text}</div><div class="small" style="opacity:.75;margin-top:6px">Score: <strong>${opt.score}</strong></div>`;
+      btn.onclick = ()=> selectOption(q.id, opt.k);
+      optionsDiv.appendChild(btn);
+    }
+    qDiv.appendChild(optionsDiv);
+    questionsArea.appendChild(qDiv);
+  }
+  updateProgressUI();
+}
+
+/* ---------- SELECTION HANDLING ---------- */
+function selectOption(qId, key){
+  // record answer and score
+  const q = QUESTIONS.find(x=>x.id==qId);
+  if(!q) return;
+  const opt = q.options.find(o=>o.k==key);
+  if(!opt) return;
+  answers[qId] = key;
+  scoreByQuestion[qId] = opt.score;
+  logEvent(`Q${qId}: selected <strong>${key.toUpperCase()}</strong> — (${opt.score} points)`);
+  // toggle selected class
+  const qDiv = document.getElementById('q'+qId);
+  qDiv.querySelectorAll('.choiceBtn').forEach(b=> b.classList.remove('selected'));
+  qDiv.querySelectorAll('.choiceBtn').forEach(b=>{ if(b.dataset.k==key) b.classList.add('selected') });
+  updateProgressUI();
+}
+
+/* ---------- PROGRESS UI ---------- */
+function updateProgressUI(){
+  const answered = Object.keys(answers).length;
+  answeredCountEl.textContent = answered + '/20';
+  const pct = Math.round((answered/QUESTIONS.length)*100);
+  progressFill.style.width = pct + '%';
+}
+
+/* ---------- CALCULATION & MAPPING ---------- */
+function calculateTotal(){
+  totalScore = 0;
+  for(const q of QUESTIONS){
+    const s = scoreByQuestion[q.id] || 0;
+    totalScore += s;
+  }
+  // Ensure 0..100
+  totalScore = clamp(totalScore,0,100);
+  logEvent(`<strong>Total Score: ${totalScore} / 100</strong>`);
+  return totalScore;
+}
+
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+function getSurvivalTier(score){
+  const n = SURVIVAL_TIERS.length;
+  const index = Math.round(score * (n-1) / 100);
+  return {index, outcome: SURVIVAL_TIERS[index]};
+}
+
+/* ---------- EXPLANATION PANEL ---------- */
+function buildExplanationHTML(){
+  let html = '<div style="font-weight:700">Per-question rationale</div>';
+  for(const q of QUESTIONS){
+    const ans = answers[q.id] || null;
+    const opt = q.options.find(o=>o.k==ans);
+    html += `<div style="margin-top:6px"><strong>Q${q.id}.</strong> ${q.text}<br/>`;
+    if(opt){
+      html += `<div class="small">You chose <strong>${ans.toUpperCase()}</strong> — Score ${opt.score}</div>`;
+      html += `<div class="explain small">${escapeHtml(opt.explanation)}</div>`;
+    } else {
+      html += `<div class="small warn">No answer selected — treated as 0 points</div>`;
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+/* ---------- RESULT DISPLAY ---------- */
+function displayResult(){
+  const score = calculateTotal();
+  const tier = getSurvivalTier(score);
+  const resultArea = document.getElementById('resultArea');
+  resultArea.innerHTML = '';
+  // Big result block
+  const box = document.createElement('div');
+  box.className = 'resultBox center';
+  box.innerHTML = `
+    <div class="largeText">You survived: <span style="color:var(--neon);font-weight:900">${tier.outcome} 🏆</span></div>
+    <div class="small" style="margin-top:6px">Score: <strong>${score} / 100</strong> — Tier ${tier.index+1} of ${SURVIVAL_TIERS.length}</div>
+    <div style="margin-top:8px" class="small">This result interprets how well your decisions would position you in a fast-zombie apocalypse: resourcefulness, social choices, moral decisions, and tactical skill all matter.</div>
+  `;
+  resultArea.appendChild(box);
+
+  // Show explanation
+  const explanation = document.getElementById('explainBox');
+  explanation.innerHTML = buildExplanationHTML();
+
+  // Save to log area
+  logEvent(`<div style="font-weight:800">FINAL: Survived ${tier.outcome} (Score ${score}/100)</div>`);
+  // Shareable report text
+  const shareText = `VIRUS — Survival Quiz Result\nScore: ${score}/100\nYou survived: ${tier.outcome}\n(${new Date().toLocaleString()})`;
+  // Add share & download UI
+  const shareDiv = document.createElement('div');
+  shareDiv.style.marginTop='10px';
+  shareDiv.innerHTML = `
+    <div class="small">Share / download your result:</div>
+    <textarea id="shareText" readonly>${shareText}</textarea>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button id="copyBtn" class="btn">Copy Result</button>
+      <button id="dlBtn" class="btn">Download Report</button>
+    </div>
+  `;
+  resultArea.appendChild(shareDiv);
+  document.getElementById('copyBtn').onclick = ()=>{ navigator.clipboard?.writeText(shareText).then(()=> alert('Copied!')); };
+  document.getElementById('dlBtn').onclick = ()=>{ const blob = new Blob([shareText],{type:'text/plain'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url; a.download = 'virus_result.txt'; a.click(); URL.revokeObjectURL(url); };
+
+  // Visual flourish: flashing outcome color for high tiers
+  if(tier.index >= SURVIVAL_TIERS.length-1){ box.classList.add('flashOutcome'); }
+}
+
+/* ---------- LOGGING ---------- */
+function logEvent(html){
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  eventLog.prepend(el);
+  // limit log
+  while(eventLog.children.length > 200) eventLog.removeChild(eventLog.lastChild);
+}
+
+/* ---------- AUX: Review / Reset ---------- */
+document.getElementById('calcBtn').onclick = ()=> {
+  // require at least one answer
+  if(Object.keys(answers).length === 0){
+    alert('Please answer at least one question before calculating.');
+    return;
+  }
+  displayResult();
+};
+
+document.getElementById('reviewBtn').onclick = ()=> {
+  // Show explanation if result already calculated; else allow quick review
+  const explanation = document.getElementById('explainBox');
+  explanation.innerHTML = buildExplanationHTML();
+  alert('Per-question rationale shown in right panel. Use this to reflect on your decisions.');
+};
+
+document.getElementById('resetBtn').onclick = ()=> {
+  if(!confirm('Reset your answers and start over?')) return;
+  answers = {}; scoreByQuestion = {}; totalScore = 0;
+  renderAllQuestions();
+  document.getElementById('resultArea').innerHTML = '';
+  document.getElementById('explainBox').innerHTML = '<div class="small">When you calculate survival, explanations will appear here.</div>';
+  logEvent('<em>Quiz reset by player.</em>');
+};
+
+/* ---------- Helpers: Modal (small) ---------- */
+function presentTempNotice(title, text){
+  alert(title + "\n\n" + text);
+}
+
+/* ---------- Rendering init ---------- */
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+renderAllQuestions();
+logEvent('<em>Quiz ready — answer all 20 questions thoughtfully. Fast zombies are unforgiving. 🧟</em>');
+
+</script>
+</body>
+</html>
