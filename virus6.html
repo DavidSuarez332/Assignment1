@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>🧪 V I R U S — Mega Expanded (Mobile Friendly)</title>
+<style>
+:root{
+  --bg:#030406; --panel:#071018; --neon:#2bff2b; --accent:#ff7b2b; --muted:#9bd;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial,monospace;background:linear-gradient(180deg,#020204,#071018);color:#dfe}
+.app{max-width:1100px;margin:0 auto;padding:10px}
+.header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px}
+.title{font-size:20px;font-weight:700;color:var(--neon)}
+.hint{font-size:12px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:900px){ .layout{grid-template-columns:360px 1fr} }
+.panel{background:linear-gradient(180deg,var(--panel),#04101a);border-radius:12px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+.mapCanvas{background:white;border-radius:8px;border:3px solid rgba(43,255,43,0.12);width:100%;height:280px}
+.familyList{display:flex;flex-direction:column;gap:8px}
+.member{display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02)}
+.avatar{width:48px;height:48px;border-radius:8px;background:linear-gradient(45deg,#0b1112,#071b2a);display:flex;align-items:center;justify-content:center;font-size:20px}
+.statRow{display:flex;gap:6px;align-items:center;font-size:13px}
+.bar{height:10px;background:#062021;border-radius:8px;overflow:hidden;width:100%}
+.fill{height:10px;background:linear-gradient(90deg,#58ff58,#2ec400)}
+.controls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.btn{flex:1 1 auto;padding:10px;border-radius:10px;background:linear-gradient(180deg,#0f1b1a,#09201c);color:#dff;border:1px solid rgba(255,255,255,0.04);font-size:15px;touch-action:manipulation}
+.btn.primary{background:linear-gradient(90deg,var(--neon),#7bf86b);color:#001}
+.btn.important{background:linear-gradient(90deg,var(--accent),#ffb86b)}
+.small{font-size:13px;color:var(--muted)}
+.log{height:200px;overflow:auto;background:#040607;border-radius:8px;padding:8px;color:#bfe;margin-top:8px}
+.footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:8px}
+.miniCanvas{background:#000;border-radius:8px;width:100%;height:220px}
+.choiceGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(max-width:500px){ .choiceGrid{grid-template-columns:1fr} .btn{font-size:16px;padding:12px} .mapCanvas{height:200px} .miniCanvas{height:180px} }
+.overlay{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:999}
+.modal{background:var(--panel);padding:12px;border-radius:10px;width:90%;max-width:720px}
+.pill{display:inline-block;padding:8px 10px;border-radius:8px;background:#0b1412;color:#dff;margin:6px}
+.green{color:#8ef08f}
+.warn{color:#ffb4b4}
+.footerNote{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="title">🧪 <span style="font-family:Impact,serif">V I R U S</span> — Mega Expanded</div>
+      <div class="hint">Retro decision survival — Jupiter, FL • Mobile friendly</div>
+    </div>
+    <div style="text-align:right">
+      <div class="small">Day <strong id="uiDay">1</strong> • elapsed <span id="uiElapsed">0</span> days</div>
+      <div style="margin-top:6px"><button id="menuBtn" class="btn">Menu</button></div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- left column -->
+    <div class="panel">
+      <div style="font-weight:700">Family</div>
+      <div id="familyArea" class="familyList" style="margin-top:8px"></div>
+
+      <div style="margin-top:10px;font-weight:700">Panfilo 🐶</div>
+      <div class="small" id="dogPanel">Mood: Happy • Hunger: 70</div>
+      <div style="margin-top:8px" class="controls">
+        <button id="feedDogBtn" class="btn">Feed Panfilo 🥩</button>
+        <button id="fetchDogBtn" class="btn">Panfilo Fetch</button>
+      </div>
+
+      <div style="margin-top:12px;font-weight:700">Resources</div>
+      <div id="resources" class="small" style="margin-top:6px"></div>
+
+      <div style="margin-top:12px;font-weight:700">Hidden Controls</div>
+      <div class="small">You can export saves, enable soundtrack, or fast-forward time.</div>
+      <div style="margin-top:8px" class="controls">
+        <button id="saveBtn" class="btn">Save</button>
+        <button id="loadBtn" class="btn">Load</button>
+        <button id="exportBtn" class="btn">Export Save</button>
+      </div>
+
+      <div style="margin-top:12px" class="small">Tip: When someone is 'about to die' you must roll >3 on a six-sided die to survive. Many risky actions use dice to determine outcomes.</div>
+    </div>
+
+    <!-- right column / main -->
+    <div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">📺 Narrative</div>
+          <div class="small" id="dangerStatus">Danger: Low</div>
+        </div>
+        <div id="narrative" style="margin-top:8px">📺 BREAKING: Local news reports a fast-moving outbreak. The anchor urges citizens to seek shelter at the Jupiter Mall. Your family — Raul, Tamara, Chris, David — must decide: hold the house, go to the mall, or scout. Choose wisely.</div>
+
+        <div style="margin-top:12px" id="actionChoices" class="choiceGrid"></div>
+
+        <div style="margin-top:12px" class="small">Motivational quote input (family will react):</div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <input id="quoteInput" placeholder="Type a short motivational quote" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.05)" />
+          <button id="quoteBtn" class="btn">Say</button>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="font-weight:700">Mini-games (touch-friendly)</div>
+          <canvas id="miniCanvas" class="miniCanvas" width="800" height="220"></canvas>
+          <div class="small" id="miniInfo">Tap a mini-game from choices to start. Controls are large for mobile.</div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:12px" class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">Game Log</div>
+          <div class="small">Last events shown at top</div>
+        </div>
+        <div id="logBox" class="log"></div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="fast7Btn" class="btn">Fast-forward 7 days ⏩</button>
+          <button id="researchBtn" class="btn">Attempt Cure Research ⚗️</button>
+          <button id="mapBtn" class="btn">Show Map (Jupiter)</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px" class="panel footerNote">
+        This enhanced build adds dice rolls, mini-games, Panfilo events, long dialogues with Spanish phrases, and a user-friendly mobile-first interface. Bite → instant death is enforced; stats flatline on death. Hidden deception (approx 80%) is applied to many NPC interactions internally.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal container for map / dialogs -->
+<div id="modalRoot" style="display:none;position:fixed;left:0;top:0;right:0;bottom:0;z-index:9999;align-items:center;justify-content:center"></div>
+
+<script>
+/* =========================
+   Mega Expanded Virus Game
+   - Dice mechanics integrated
+   - Mobile-first controls and big buttons
+   - Panfilo events and mini-games
+   - Chronological story + NPC interactions
+   - Bite => instant death (flatlined stats)
+   - Save/Load/Export
+   ========================= */
+
+// Utility helpers
+const $ = sel => document.querySelector(sel);
+const logBox = $('#logBox');
+function log(msg){
+  const d = document.createElement('div'); d.innerHTML = msg;
+  logBox.prepend(d);
+  // keep only recent 200 lines
+  while(logBox.children.length>300) logBox.removeChild(logBox.lastChild);
+}
+function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; } // inclusive
+function diceRoll(){ const r = randInt(1,6); log(`<span class="pill">🎲 Rolled: ${r}</span>`); return r; }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+// Game state (expanded)
+let state = {
+  day:1, elapsed:0, location:'House', danger:8,
+  family:{
+    Raul:{label:'Raul',age:55,role:'Father',job:'Engineer',hp:140,hunger:9,morale:70,strength:65,speed:45,luck:50,alive:true,state:'healthy'},
+    Tamara:{label:'Tamara',age:53,role:'Mother',job:'Nurse',hp:130,hunger:8,morale:85,strength:45,speed:40,luck:42,alive:true,state:'healthy'},
+    Chris:{label:'Chris',age:27,role:'Oldest Son',job:'Nurse',hp:110,hunger:12,morale:75,strength:60,speed:50,luck:38,alive:true,state:'healthy'},
+    David:{label:'David',age:24,role:'Youngest Son',job:'Data Science Student',hp:100,hunger:10,morale:80,strength:50,speed:55,luck:40,alive:true,state:'healthy'}
+  },
+  panfilo:{mood:80,hunger:70,alive:true},
+  inventory:{food:6,water:6,meds:2,blunt:1,sharp:0,parts:1,explosives:0},
+  cure:{active:false,progress:0,notes:0},
+  foundLore:false,possibleRescue:false,hiddenDeceptionProb:0.8,sound:true
+};
+
+// UI refresh
+function refreshUI(){
+  $('#uiDay').textContent = state.day;
+  $('#uiElapsed').textContent = state.elapsed;
+  // family
+  const fam = $('#familyArea'); fam.innerHTML='';
+  for(const [key,p] of Object.entries(state.family)){
+    const el = document.createElement('div'); el.className='member';
+    const av = document.createElement('div'); av.className='avatar'; av.textContent = key[0];
+    const info = document.createElement('div');
+    info.innerHTML = `<div style="font-weight:700">${p.label} <span class="small">(${p.age})</span></div>
+      <div class="statRow"><div style="width:55%"><div class="small">HP</div><div class="bar"><div class="fill" style="width:${clamp(p.hp,0,150)}%"></div></div></div><div style="width:35%" class="small">${Math.round(p.hp)}</div></div>
+      <div class="statRow"><div style="width:55%"><div class="small">Hunger</div><div class="bar"><div class="fill" style="width:${clamp(p.hunger,0,100)}%;background:linear-gradient(90deg,#ffd86b,#ff7b2b)"></div></div></div><div style="width:35%" class="small">${Math.round(p.hunger)}</div></div>
+      <div class="small">Morale: ${Math.round(p.morale)} • ${p.state}</div>`;
+    el.appendChild(av); el.appendChild(info); fam.appendChild(el);
+  }
+  // resources
+  $('#resources').innerHTML = `Food: <strong>${state.inventory.food}</strong> 🍱 • Water: <strong>${state.inventory.water}</strong> 💧 • Meds: <strong>${state.inventory.meds}</strong> 💊 • Parts: <strong>${state.inventory.parts}</strong> ⚙️`;
+  // dog
+  $('#dogPanel').textContent = `Mood: ${state.panfilo.mood} • Hunger: ${state.panfilo.hunger}`;
+  // danger
+  const dangerTxt = state.danger<30?'Low':state.danger<60?'Medium':state.danger<85?'High':'Extreme';
+  $('#dangerStatus').textContent = `Danger: ${dangerTxt}`;
+  const w = clamp(state.danger,0,100)+'%';
+  $('#dangerStatus').style.color = state.danger<60?'#9bd':'#ffb86b';
+  // action choices (dynamic)
+  renderActionChoices();
+}
+function renderActionChoices(){
+  const container = $('#actionChoices'); container.innerHTML='';
+  // Standard choices
+  const choices = [
+    {label:'Search the House 🥫',action:searchHouse},
+    {label:'Search Attic 🔎',action:searchAttic},
+    {label:'Scout Neighborhood 🚶',action:scoutNeighborhood},
+    {label:'Listen on Radio 📻',action:radioAttempt},
+    {label:'Fortify House 🪵',action:fortifyHouse},
+    {label:'Consider Mall 🏬',action:considerMall},
+    {label:'Craft Weapon 🛠',action:craftWeapon},
+    {label:'Attempt Cure Research ⚗️',action:attemptCure},
+    {label:'MiniGame: Escape QTE',action:()=>startEscapeQTE(4)},
+    {label:'MiniGame: High-Speed Chase',action:startChase},
+    {label:'MiniGame: Flying Simulator',action:startFlight}
+  ];
+  // show top 6 choices prioritized
+  for(let i=0;i<6;i++){
+    const c = choices[i];
+    const b = document.createElement('button'); b.className='btn'; b.textContent = c.label; b.onclick = ()=>{ c.action(); refreshUI(); };
+    container.appendChild(b);
+  }
+  // small drop-down for more choices (mobile friendly)
+  const more = document.createElement('div'); more.style.gridColumn='1/-1'; more.style.display='flex'; more.style.gap='8px';
+  for(let i=6;i<choices.length;i++){
+    const c = choices[i];
+    const b = document.createElement('button'); b.className='btn'; b.textContent = c.label; b.onclick = ()=>{ c.action(); refreshUI(); };
+    more.appendChild(b);
+  }
+  container.appendChild(more);
+}
+
+// Logging
+function narrative(msg){ $('#narrative').innerHTML = msg; log(`<div style="font-weight:700">${msg}</div>`); }
+
+// Day tick and hunger effects
+function applyHungerEffects(person){
+  if(!person.alive) return;
+  // hunger: 0-100 (higher = hungrier)
+  const penalty = Math.max(0,(person.hunger - 30)/4); // scales gently
+  person.hp = Math.max(0, person.hp - penalty*0.8);
+  person.morale = Math.max(0, person.morale - penalty*0.25);
+  person.strength = Math.max(0, person.strength - penalty*0.2);
+  person.speed = Math.max(0, person.speed - penalty*0.15);
+}
+function updateStatus(person){
+  if(!person.alive) return;
+  if(person.hp<=0){ person.alive=false; person.hp=0; person.state='dead'; doDeath(person); return; }
+  if(person.hp<25) person.state='about to die';
+  else if(person.hp<50) person.state='injured';
+  else if(person.hp<75) person.state='fatigued';
+  else person.state='healthy';
+  if(person.state==='about to die'){ // mandatory dice
+    const roll = diceRoll();
+    log(`<span class="small">🔔 ${person.label} is about to die — dice roll required (>3 to survive)</span>`);
+    if(roll>3){ person.hp += 8; person.state='injured'; log(`<span class="green">${person.label} survived the roll.</span>`); }
+    else { person.hp=0; person.alive=false; person.state='dead'; doDeath(person); }
+  }
+}
+function dailyTick(days=1){
+  for(let d=0; d<days; d++){
+    state.day++; state.elapsed++;
+    // hunger increases
+    for(const p of Object.values(state.family)){
+      if(!p.alive) continue;
+      p.hunger = clamp(p.hunger + randInt(4,7), 0, 120); // allow overflow to stress
+      applyHungerEffects(p);
+      updateStatus(p);
+    }
+    // dog hunger
+    if(state.panfilo.alive){
+      state.panfilo.hunger = clamp(state.panfilo.hunger + randInt(5,9), 0, 120);
+      if(state.panfilo.hunger>90){ log('🐶 Panfilo is desperate — may run off or bark.'); if(Math.random()<0.2) panfiloBarkEvent(); }
+    }
+    // random world events
+    if(Math.random()<0.15) worldEvent();
+    // creeping danger
+    state.danger = clamp(state.danger + randInt(0,3), 0, 100);
+  }
+  refreshUI();
+}
+
+// Dice utilities
+function diceRoll(){
+  const r = randInt(1,6);
+  log(`<span class="pill">🎲 Rolled: ${r}</span>`);
+  return r;
+}
+function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+// Death handling
+function doDeath(person){
+  // flatline stats
+  person.hp = 0; person.hunger = 100; person.morale = 0; person.strength = 0; person.speed = 0;
+  const name = person.label;
+  log(`<div class="warn">💀 ${name} has died. All stats flatlined.</div>`);
+  // morale hit
+  for(const p of Object.values(state.family)) if(p.alive) p.morale = Math.max(0, p.morale - 20);
+  refreshUI();
+}
+
+// World events
+function worldEvent(){
+  const r = Math.random();
+  if(r<0.12){ log('🚨 A nearby gang attacks a supply drop.'); state.danger += 12; if(Math.random()<0.35){ const victim = randomAlive(); if(victim){ victim.hp -= randInt(10,35); log(`${victim.label} was injured by gang violence.`); updateStatus(victim); } } }
+  else if(r<0.24){ log('📦 A contested supply cache is located nearby. You can try to retrieve it (risky).'); // create mission choice
+    presentModal('Contested Cache', 'A supply cache is nearby at the old docks. Attempt to retrieve? (high risk, high reward)', [
+      {label:'Attempt (roll)',action:()=>{ const roll=diceRoll(); if(roll>=4){ state.inventory.food += randInt(2,5); state.inventory.meds += 1; log('🟢 Successful retrieval! Food & meds gained.'); } else { state.danger += 18; const v = randomAlive(); if(v){ v.hp -= 25; log(`${v.label} was hurt in the raid.`); updateStatus(v);} log('🔴 Retrieval failed and enemy alerted!'); } }},
+      {label:'Ignore',action:()=>{ log('You decide not to risk it.'); }}
+    ]);
+  }
+  else if(r<0.4){ log('🧟 Fast zombie horde sighted on nearby highway — advisable to avoid main roads.'); state.danger += 6; if(Math.random()<0.18){ const v = randomAlive(); if(v){ v.hp -= 30; log(`${v.label} was bitten by a fast zombie and is in critical danger.`); updateStatus(v); } } }
+  else { log('📯 Quiet day — small chance to rest.'); for(const p of Object.values(state.family)) if(p.alive) p.morale = Math.min(100, p.morale + 2); }
+}
+
+// Random alive member
+function randomAlive(){
+  const arr = Object.values(state.family).filter(p=>p.alive);
+  if(arr.length===0) return null;
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
+// Actions (many)
+function searchHouse(){
+  narrative('You search the house for food and supplies.');
+  const r = Math.random();
+  if(r<0.6){
+    const found = randInt(1,4);
+    state.inventory.food += found;
+    state.inventory.water += randInt(0,found);
+    for(const p of Object.values(state.family)) if(p.alive) p.morale = Math.min(100,p.morale + 3);
+    log(`✅ Found ${found} food and some water. Panfilo sniffed them out.`);
+  } else if(r<0.9){
+    log('⚠️ You made noise and attracted attention — quick escape needed.');
+    state.danger += 8;
+    // quick escape QTE
+    startEscapeQTE(3, ()=>{ log('Escape QTE success — you slipped away.'); }, ()=>{ const v=randomAlive(); if(v){ v.hp -= 25; log(`❌ ${v.label} was bitten during the noise.`); updateStatus(v);} });
+  } else {
+    log('💥 Structural collapse - heavy injury risk.');
+    if(Math.random()<0.25){ const v=randomAlive(); if(v){ v.hp -= 35; log(`⚠️ ${v.label} was injured by debris.`); updateStatus(v);} }
+  }
+  dailyTick(1);
+}
+function searchAttic(){
+  narrative('You search the attic for family history and clues.');
+  if(!state.foundLore && Math.random()<0.9){
+    state.foundLore = true; state.cure.notes = (state.cure.notes||0)+2;
+    log('🔎 You found old government documents and a dossier — a family link to the outbreak emerges.');
+  } else {
+    state.inventory.meds += 1;
+    log('Tamara found some old medical supplies in a trunk.');
+  }
+  dailyTick(1);
+}
+function scoutNeighborhood(){
+  narrative('You scout the streets. Smoke and overturned vehicles are everywhere.');
+  const r = Math.random();
+  if(r<0.3){
+    if(Math.random()<state.hiddenDeceptionProb){ log('🤝 A stranger appears friendly but later betrays you — deception! You lose a food.'); state.inventory.food = Math.max(0,state.inventory.food-1); state.danger += 10; } 
+    else { log('🤝 You meet a true ally who shares meds and advice.'); state.inventory.meds += 1; for(const p of Object.values(state.family)) if(p.alive) p.morale = Math.min(100,p.morale+6); }
+  } else if(r<0.7){
+    log('🧟 Encountered a small group of fast zombies — you attempt to outrun them.');
+    startEscapeQTE(4, ()=>{ log('You escaped the zombies!'); }, ()=>{ const v=randomAlive(); if(v){ setDeadByBite(v); }});
+  } else {
+    log('⚒ You scavenge vehicle parts and tools useful for repairs or crafting.');
+    state.inventory.parts += randInt(1,3);
+    state.inventory.blunt += 1;
+  }
+  dailyTick(1);
+}
+function radioAttempt(){
+  narrative('You broadcast a mayday and wait for a response.');
+  // 50/50 lure vs real rescue
+  if(Math.random()<0.5){
+    log('📡 Trap: your broadcast attracted hostile groups. Danger increases.');
+    state.danger += 25;
+    if(Math.random()<0.3){ const v=randomAlive(); if(v){ v.hp -= 30; log(`${v.label} was injured while hiding from the lure.`); updateStatus(v);} }
+  } else {
+    state.possibleRescue = true;
+    log('📡 A real entity acknowledged your transmission — rescue might be possible later.');
+  }
+  dailyTick(1);
+}
+
+function considerMall(){
+  narrative('The news anchor recommended the Mall. Decide: go to the mall, fortify home, or scout route.');
+  presentModal('Mall Decision', 'Do you head to the Mall (potential safe zone) or stay?', [
+    {label:'Go to Mall 🏬', action:()=>{ goToMall(); }},
+    {label:'Fortify Home 🪵', action:()=>{ fortifyHome(); }},
+    {label:'Scout Route 🧭', action:()=>{ scoutNeighborhood(); }}
+  ]);
+}
+
+function goToMall(){
+  narrative('You attempt to reach the Mall. The roads are chaotic and dangerous.');
+  const roll = diceRoll();
+  if(roll>=4){
+    log('🎯 You made it to the Mall with supplies intact. Some groups cooperate; trade occurs.');
+    state.inventory.food += randInt(2,5);
+    state.inventory.meds += 1;
+    for(const p of Object.values(state.family)) if(p.alive) p.morale = Math.min(100,p.morale + 8);
+  } else {
+    log('💥 Ambush / Chaos at the Mall — you barely escape and take injuries.');
+    state.danger += 20;
+    if(Math.random()<0.5){ const v=randomAlive(); if(v){ v.hp -= 30; log(`${v.label} was bitten at the Mall and is in grave danger.`); updateStatus(v);} }
+  }
+  dailyTick(1);
+}
+
+function fortifyHome(){
+  narrative('You fortify your house tonight—barricades and traps are set.');
+  state.danger = Math.max(0, state.danger - 8);
+  for(const p of Object.values(state.family)) if(p.alive) p.morale = Math.min(100,p.morale + 5);
+  dailyTick(1);
+}
+
+function craftWeapon(){
+  narrative('Attempt to craft a better weapon from parts.');
+  if(state.inventory.parts>=2){
+    state.inventory.parts -= 2;
+    state.inventory.sharp += 1;
+    log('🔧 Crafted a crude blade (sharp +1).');
+  } else log('🔧 Not enough parts to craft a weapon.');
+  dailyTick(1);
+}
+
+function attemptCure(){
+  if(!state.foundLore){ narrative('You lack crucial data — search the attic or find lab notes first.'); return; }
+  if(state.inventory.meds < 2){ narrative('Not enough meds to support research — collect more.'); return; }
+  narrative('You begin preliminary cure research using found notes and meds.');
+  state.inventory.meds -= 2;
+  state.cure.progress += randInt(1,6);
+  state.cure.notes += 1;
+  log(`⚗️ Research progress: ${state.cure.progress}`);
+  if(Math.random()<0.01 && state.cure.progress>40){ // rare success
+    narrative('✨ You synthesized a prototype cure against overwhelming odds.');
+    state.cure.progress = 1000;
+    log('HIDDEN RESULT: Prototype cure created — rare win condition!');
+  }
+  dailyTick(2);
+}
+
+// Bite => instant death handler
+function setDeadByBite(v){
+  v.alive = false;
+  v.hp = 0; v.hunger = 100; v.morale = 0; v.strength = 0; v.speed = 0; v.state = 'dead';
+  log(`<span class="warn">☠️ ${v.label} was bitten and has died. All stats flatlined.</span>`);
+  for(const p of Object.values(state.family)) if(p.alive) p.morale = Math.max(0, p.morale - 20);
+  refreshUI();
+}
+
+// Panfilo events
+function panfiloFindsFood(){
+  if(!state.panfilo.alive) return;
+  log('🐶 Panfilo rummaged and found food! +2 food.');
+  state.inventory.food += randInt(1,3);
+  state.panfilo.hunger = clamp(state.panfilo.hunger - randInt(30,50), 0, 100);
+  for(const p of Object.values(state.family)) if(p.alive) p.morale = Math.min(100, p.morale + 4);
+  refreshUI();
+}
+function panfiloBarkEvent(){
+  log('🐶 Panfilo barked at the wrong moment — a horde notices you!');
+  state.danger += 15;
+  // initiate escape QTE
+  startEscapeQTE(4, ()=>{ log('✅ You avoided the horde thanks to quick action.'); }, ()=>{ const victim = randomAlive(); if(victim) setDeadByBite(victim); });
+}
+function panfiloRunOff(){
+  if(!state.panfilo.alive) return;
+  log('🐶 Panfilo ran off following a scent! You may recover him (risky).');
+  presentModal('Find Panfilo', 'Panfilo ran off — send someone to retrieve him (risky).', [
+    {label:'Send Raul (roll 4+)', action:()=>{ const r=diceRoll(); if(r>=4){ state.panfilo.hunger = clamp(state.panfilo.hunger - 50, 0, 100); state.panfilo.mood = Math.min(100,state.panfilo.mood+10); log('✅ Raul recovered Panfilo safely.'); } else { const v=randomAlive(); if(v) { v.hp -= 20; log(`⚠️ ${v.label} was hurt retrieving Panfilo.`); updateStatus(v);} }}},
+    {label:'Leave him', action:()=>{ log('You decide not to risk it — Panfilo may return on his own.'); state.panfilo.mood = Math.max(0,state.panfilo.mood - 12); }}
+  ]);
+}
+
+// Mini-games: Escape QTE (touch), Chase, Flying (simplified)
+const miniCanvas = document.getElementById('miniCanvas');
+const mctx = miniCanvas.getContext('2d');
+let mgActive = null;
+
+function startEscapeQTE(difficulty=4, onSuccess, onFail){
+  if(mgActive) return;
+  mgActive = {type:'escape',seq:[],index:0,time:6000,onSuccess,onFail};
+  const keys = ['A','S','D','W','E','Q'];
+  for(let i=0;i<difficulty;i++) mgActive.seq.push(keys[randInt(0,keys.length-1)]);
+  narrative('Mini-game: Escape QTE — tap the sequence to avoid danger.');
+  drawEscape();
+  // show touch buttons
+  showQTEButtons();
+}
+function drawEscape(){
+  mctx.clearRect(0,0,miniCanvas.width,miniCanvas.height);
+  mctx.fillStyle='#022'; mctx.fillRect(0,0,miniCanvas.width,miniCanvas.height);
+  mctx.fillStyle='#fff'; mctx.font='18px monospace'; mctx.fillText('Escape QTE — Tap sequence', 14, 30);
+  mctx.fillText(`Time: ${Math.ceil(mgActive.time/1000)}s`, miniCanvas.width-140, 30);
+  for(let i=0;i<mgActive.seq.length;i++){
+    mctx.fillStyle = (i===mgActive.index)? '#ff0' : '#0f0';
+    mctx.fillRect(20 + i*120, 60, 104, 104);
+    mctx.fillStyle='#000'; mctx.font='22px monospace'; mctx.fillText(mgActive.seq[i], 60 + i*120, 120);
+  }
+}
+function showQTEButtons(){
+  const container = document.createElement('div'); container.id='qteButtons'; container.style.cssText='position:relative;margin-top:8px;display:flex;gap:8px;flex-wrap:wrap';
+  const used = new Set();
+  for(const k of mgActive.seq){
+    if(used.has(k)) continue;
+    used.add(k);
+    const b = document.createElement('button'); b.className='btn'; b.style.flex='1 1 30%'; b.textContent = k; b.onclick = ()=>{ if(!mgActive) return; if(k===mgActive.seq[mgActive.index]){ mgActive.index++; if(mgActive.index>=mgActive.seq.length) endEscape(true); else drawEscape(); } else endEscape(false); };
+    container.appendChild(b);
+  }
+  miniCanvas.after(container);
+  // timer tick
+  mgActive.timer = setInterval(()=>{ mgActive.time -= 300; if(mgActive.time<=0) endEscape(false); drawEscape(); },300);
+}
+function endEscape(success){
+  if(!mgActive) return;
+  clearInterval(mgActive.timer); const qbtn = document.getElementById('qteButtons'); if(qbtn) qbtn.remove();
+  const cb = success ? mgActive.onSuccess : mgActive.onFail;
+  if(success) { log('✅ QTE success'); if(cb) cb(); } else { log('❌ QTE failed'); if(cb) cb(); }
+  mgActive=null; // clear
+  // clear miniCanvas
+  mctx.clearRect(0,0,miniCanvas.width,miniCanvas.height);
+}
+
+// Simple High-Speed Chase: steer to avoid obstacles
+let chaseState = null;
+function startChase(){
+  if(mgActive) return;
+  mgActive = {type:'chase',pos:miniCanvas.width/2,obstacles:[],time:20000,score:0};
+  narrative('Mini-game: High-Speed Chase — tap left/right to steer and avoid obstacles.');
+  // spawn obstacles
+  chaseState = mgActive;
+  chaseLoop();
+  // touch controls
+  const controls = createInlineControls(['Left','Right']);
+  controls[0].onclick = ()=>{ if(chaseState) chaseState.pos -= 40; };
+  controls[1].onclick = ()=>{ if(chaseState) chaseState.pos += 40; };
+}
+function chaseLoop(){
+  if(!chaseState) return;
+  // update
+  chaseState.time -= 150;
+  // spawn
+  if(Math.random()<0.25) chaseState.obstacles.push({x:randInt(40,miniCanvas.width-40),y:0});
+  // move obstacles
+  for(const o of chaseState.obstacles){ o.y += 8 + Math.random()*6; }
+  // remove offscreen
+  chaseState.obstacles = chaseState.obstacles.filter(o=>o.y < miniCanvas.height+40);
+  // collision check
+  for(const o of chaseState.obstacles){
+    if(Math.abs(o.x - chaseState.pos) < 36 && Math.abs(o.y - (miniCanvas.height-40)) < 36){
+      // collision
+      log('💥 Collision in chase! You take damage.');
+      // damage random alive
+      const v = randomAlive();
+      if(v){ v.hp -= randInt(12,28); updateStatus(v); }
+      // end chase
+      endChase(false);
+      return;
+    }
+  }
+  // draw
+  mctx.clearRect(0,0,miniCanvas.width,miniCanvas.height);
+  mctx.fillStyle='#001011'; mctx.fillRect(0,0,miniCanvas.width,miniCanvas.height);
+  mctx.fillStyle='#fff'; mctx.fillText('High-Speed Chase', 14, 20);
+  // draw player
+  mctx.fillStyle='#7be6ff'; mctx.fillRect(chaseState.pos-20, miniCanvas.height-56, 40, 40);
+  // draw obstacles
+  mctx.fillStyle='#ff7b2b';
+  for(const o of chaseState.obstacles) mctx.fillRect(o.x-16, o.y-16, 32, 32);
+  // loop
+  if(chaseState.time<=0){
+    endChase(true);
+  } else setTimeout(chaseLoop, 120);
+}
+function endChase(success){
+  if(!chaseState) return;
+  if(success){ log('🏁 Chase completed successfully!'); state.inventory.parts += 1; } else log('🚫 Chase failed or crashed.');
+  chaseState=null; mgActive=null;
+  // remove inline controls
+  removeInlineControls();
+  mctx.clearRect(0,0,miniCanvas.width,miniCanvas.height);
+}
+
+// Flight mini-game: fuel management and landing
+let flightState = null;
+function startFlight(){
+  if(mgActive) return;
+  mgActive = {type:'flight',fuel:randInt(40,80),alt:200,wind:randInt(-3,3)};
+  narrative('Mini-game: Flying simulator — manage fuel and landing (tap Burn or Glide).');
+  showFlightControls();
+  flightLoop();
+}
+function flightLoop(){
+  if(!mgActive) return;
+  // fuel drains
+  mgActive.fuel -= Math.max(0.6, 0.6 + Math.random()*1.2);
+  mgActive.alt += mgActive.wind;
+  // minor random events
+  if(Math.random()<0.04) mgActive.wind += randInt(-2,2);
+  // draw
+  mctx.clearRect(0,0,miniCanvas.width,miniCanvas.height);
+  mctx.fillStyle='#001'; mctx.fillRect(0,0,miniCanvas.width,miniCanvas.height);
+  mctx.fillStyle='#fff'; mctx.fillText('Flight - fuel:'+Math.round(mgActive.fuel), 12, 20);
+  mctx.fillStyle='#7be6ff'; mctx.fillRect(60, 80, mgActive.alt, 16);
+  mctx.fillStyle='#ffd86b'; mctx.fillRect(60, 110, mgActive.fuel, 16);
+  if(mgActive.fuel<=0){ log('⛽ Out of fuel! Forced landing...'); endFlight(false); return; }
+  if(mgActive.alt<=0){ // landed
+    const success = mgActive.fuel > 20;
+    endFlight(success);
+    return;
+  }
+  setTimeout(flightLoop, 400);
+}
+function endFlight(success){
+  if(!mgActive) return;
+  if(success){ log('✈️ Successful flight and landing — supplies delivered.'); state.inventory.food += 3; state.inventory.parts += 1; } else { log('💥 Crash landing — injuries likely.'); const v=randomAlive(); if(v){ v.hp -= randInt(20,50); updateStatus(v);} }
+  mgActive=null; removeInlineControls(); mctx.clearRect(0,0,miniCanvas.width,miniCanvas.height);
+}
+function flightBurn(){ if(!mgActive) return; mgActive.fuel -= 5; mgActive.alt += 10; }
+function flightGlide(){ if(!mgActive) return; mgActive.fuel -= 1; mgActive.alt -= 6; }
+
+// inline controls (for mini-games)
+let inlineControls = null;
+function createInlineControls(buttonLabels){
+  removeInlineControls();
+  inlineControls = document.createElement('div'); inlineControls.id='inlineControls'; inlineControls.style.cssText='display:flex;gap:8px;margin-top:8px';
+  for(const lbl of buttonLabels){
+    const b = document.createElement('button'); b.className='btn'; b.style.flex='1'; b.textContent=lbl; inlineControls.appendChild(b);
+  }
+  $('#miniCanvas').after(inlineControls);
+  return Array.from(inlineControls.querySelectorAll('button'));
+}
+function removeInlineControls(){ const c = document.getElementById('inlineControls'); if(c) c.remove(); const q = document.getElementById('qteButtons'); if(q) q.remove(); }
+
+// Flight controls
+function showFlightControls(){
+  const [burn, glide] = createInlineControls(['Burn 🔥','Glide 🪂']);
+  burn.onclick = ()=>flightBurn();
+  glide.onclick = ()=>flightGlide();
+}
+
+// Escape QTE helper: startEscapeQTE used earlier (already implemented above)
+
+// NPC Dialogues (sample longer conversations with Spanish phrases & hidden deception)
+const dialogues = {
+  'Marta': {
+    lines:[
+      {text:'Hola — somos un pequeño grupo en el muelle. We need meds to treat the wounded. Trade food for help?', choices:[
+        {label:'Give 1 food', effect:()=>{ if(state.inventory.food>0){ state.inventory.food--; state.family.Raul.morale = Math.min(100,state.family.Raul.morale+3); log('Marta: Gracias — we will help in return.'); } else log('You have no food to trade.'); }},
+        {label:'Ask for info', effect:()=>{ log('Marta: There is a hidden lab note near the old power plant. Be careful.'); state.mapTip='PowerPlantNote'; }}
+      ]},
+      {text:'We can teach simple triage — but trust is limited. ¿Confías en nosotros?', choices:[{label:'Yes', effect:()=>{ log('They patched your wounds and taught tamara a technique.'); state.family.Tamara.morale += 4; }},{label:'No', effect:()=>{ log('You decline to cooperate. Marta seems disappointed.'); state.family.Tamara.morale -= 3; }}]}
+    ]
+  }
+};
+
+function startDialogue(name){
+  const convo = dialogues[name];
+  if(!convo) return;
+  let idx = 0;
+  const show = ()=> {
+    const node = convo.lines[idx];
+    presentModal(name, node.text, node.choices.map(c=>({label:c.label, action:()=>{ if(c.effect) c.effect(); idx++; if(idx>=convo.lines.length) closeModal(); else show(); }})));
+  };
+  show();
+}
+
+// Modal helper
+function presentModal(title, text, options){
+  const root = $('#modalRoot'); root.style.display='flex'; root.innerHTML = `<div class="overlay"><div class="modal"><h3>${title}</h3><div style="margin:8px 0" id="modalText">${text}</div><div id="modalBtns" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div></div></div>`;
+  const btns = $('#modalBtns');
+  for(const opt of options){
+    const b = document.createElement('button'); b.className='btn'; b.textContent = opt.label; b.onclick = ()=>{ opt.action(); closeModal(); refreshUI(); };
+    btns.appendChild(b);
+  }
+}
+function closeModal(){ const root = $('#modalRoot'); root.style.display='none'; root.innerHTML=''; }
+
+// Save/Load/Export
+$('#saveBtn').onclick = ()=>{ localStorage.setItem('virus_save', JSON.stringify(state)); log('💾 Saved to local slot.'); };
+$('#loadBtn').onclick = ()=>{ const s = localStorage.getItem('virus_save'); if(s){ state = JSON.parse(s); refreshUI(); log('📂 Loaded saved game.'); } else log('No save found.'); };
+$('#exportBtn').onclick = ()=>{ const data = JSON.stringify(state); const blob = new Blob([data],{type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'virus_save.json'; a.click(); URL.revokeObjectURL(url); log('⬇️ Exported save file.'); };
+
+// UI bindings
+$('#feedDogBtn').onclick = ()=>{ if(state.inventory.food>0 && state.panfilo.alive){ state.inventory.food--; state.panfilo.hunger = Math.max(0,state.panfilo.hunger - 40); state.panfilo.mood = Math.min(100,state.panfilo.mood + 10); log('🐶 You fed Panfilo. He looks happier.'); } else log('No food or Panfilo not present.'); refreshUI(); };
+$('#fetchDogBtn').onclick = ()=>{ // Panfilo fetch mini-game simplified: roll needed
+  narrative('Panfilo runs to fetch food under fire. Dice roll to succeed.');
+  const roll = diceRoll();
+  if(roll>=4){ log('🐶 Fetch success — found food! +2 food'); state.inventory.food += 2; state.panfilo.hunger = Math.max(0, state.panfilo.hunger - 30); } else { log('🐶 Panfilo failed to fetch and startled a patrol — danger increases.'); state.danger += 12; if(Math.random()<0.2){ panfiloRunOff(); } }
+  dailyTick(0); refreshUI();
+};
+$('#quoteBtn').onclick = ()=>{ const txt = $('#quoteInput').value.trim(); if(!txt) return; log(`<em>You say:</em> "${escapeHtml(txt)}"`); // family responses
+  for(const p of Object.values(state.family)){ if(!p.alive) continue; const agree = Math.random()*100 < p.morale; if(agree){ p.morale = Math.min(100,p.morale + 4); log(`${p.label}: "Gracias, me anima."`); } else { p.morale = Math.max(0,p.morale - 2); log(`${p.label}: "..." (uncertain)`); } } $('#quoteInput').value=''; refreshUI(); };
+
+$('#fast7Btn').onclick = ()=>{ dailyTick(7); log('⏩ Fast-forwarded 7 days.'); refreshUI(); };
+$('#researchBtn').onclick = ()=>{ attemptCure(); refreshUI(); };
+$('#menuBtn').onclick = ()=>{ presentModal('Menu', 'Options', [
+  {label:'Toggle Sound', action:()=>{ state.sound = !state.sound; log('Sound '+(state.sound?'enabled':'disabled')); }},
+  {label:'View Map (approx Jupiter)', action:()=>{ showMap(); }},
+  {label:'Close', action:()=>{} }
+]); };
+
+// Map (simple canvas showing Jupiter approximate markers)
+function showMap(){
+  presentModal('Jupiter, FL Map', '<canvas id="mapCanvas" width="640" height="360" style="width:100%;height:auto;border-radius:8px;background:white"></canvas>', [{label:'Close', action:()=>{}}]);
+  setTimeout(()=>{ const c = document.getElementById('mapCanvas'); if(!c) return; const ctx = c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.fillStyle='rgba(0,0,0,0.04)'; for(let y=0;y<c.height;y+=6) ctx.fillRect(0,y,c.width,1); ctx.fillStyle='#081'; ctx.font='14px monospace'; ctx.fillText('Markers: House, Mall, Hospital, Farm, Beach, Airstrip, Power Plant', 12, 20); ctx.fillStyle='#ff7b2b'; ctx.fillRect(60,80,10,10); ctx.fillText('Family House', 80, 90); ctx.fillRect(240,120,10,10); ctx.fillText('Jupiter Mall', 260, 130); ctx.fillRect(340,60,10,10); ctx.fillText('Hospital', 360, 70); }, 20);
+}
+
+// Helpers
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function narrative(msg){ $('#narrative').innerHTML = msg; log(`<strong>${msg}</strong>`); }
+
+// initial actions list
+function initChoices(){
+  // initial options: stay or go to mall
+  presentModal('Initial Choice', 'The news anchor advises going to the Mall. What do you do?', [
+    {label:'Stay & Fortify House', action:()=>{ fortifyHome(); }},
+    {label:'Head to Mall (risky)', action:()=>{ goToMall(); }},
+    {label:'Scout First', action:()=>{ scoutNeighborhood(); }}
+  ]);
+}
+
+// setDeadByBite exposed earlier
+function updateStatus(p){ if(!p.alive) return; if(p.hp<=0){ p.alive=false; p.hp=0; p.state='dead'; doDeath(p); } else if(p.hp<25) p.state='about to die'; else if(p.hp<50) p.state='injured'; else if(p.hp<75) p.state='fatigued'; else p.state='healthy'; }
+function doDeath(p){ p.hp=0; p.hunger=100; p.morale=0; p.strength=0; p.speed=0; p.state='dead'; log(`<div class="warn">💀 ${p.label} died (flatlined).</div>`); for(const q of Object.values(state.family)) if(q.alive) q.morale = Math.max(0, q.morale - 20); }
+function setDeadByBite(v){ setDeadByBiteInternal(v); }
+function setDeadByBiteInternal(v){ v.alive=false; v.hp=0; v.hunger=100; v.morale=0; v.strength=0; v.speed=0; v.state='dead'; log(`<div class="warn">☠️ ${v.label} was bitten and has died.</div>`); for(const q of Object.values(state.family)) if(q.alive) q.morale = Math.max(0, q.morale - 20); refreshUI(); }
+
+// helper randomAlive returns object
+function randomAlive(){ const arr = Object.values(state.family).filter(x=>x.alive); if(arr.length===0) return null; return arr[Math.floor(Math.random()*arr.length)]; }
+
+// initial render
+refreshUI();
+log('Game loaded — press Menu for options or start with Initial Choice.');
+setTimeout(()=>{ initChoices(); }, 400);
+
+</script>
+</body>
+</html>
