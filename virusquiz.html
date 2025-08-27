@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIRUS 🧟‍♂️🦠</title>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(to right, #1f1c2c, #928dab);
+        color: white;
+        text-align: center;
+        padding: 20px;
+        animation: backgroundFlash 5s infinite alternate;
+        transition: all 0.5s ease;
+    }
+
+    h1 {
+        font-size: 3em;
+        color: #ff4d4d;
+        text-shadow: 2px 2px #000;
+    }
+
+    .question {
+        font-size: 1.5em;
+        margin: 20px 0;
+        text-shadow: 1px 1px #000;
+    }
+
+    button {
+        display: block;
+        margin: 10px auto;
+        padding: 15px 25px;
+        font-size: 1.2em;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: #000;
+        font-weight: bold;
+        box-shadow: 0px 0px 15px 0px #fff;
+        animation: buttonFlash 2s infinite;
+    }
+
+    @keyframes buttonFlash {
+        0% { background-color: #ff9900; box-shadow: 0 0 15px #ff9900;}
+        25% { background-color: #ffcc00; box-shadow: 0 0 20px #ffcc00;}
+        50% { background-color: #ff6600; box-shadow: 0 0 25px #ff6600;}
+        75% { background-color: #ffcc00; box-shadow: 0 0 20px #ffcc00;}
+        100% { background-color: #ff9900; box-shadow: 0 0 15px #ff9900;}
+    }
+
+    button:hover {
+        transform: scale(1.15);
+        color: white;
+        text-shadow: 1px 1px #000;
+    }
+
+    #result {
+        font-size: 2em;
+        margin-top: 30px;
+        color: #00ff99;
+        text-shadow: 1px 1px 2px #000;
+        animation: resultFlash 3s infinite alternate;
+    }
+
+    @keyframes resultFlash {
+        0% {color: #00ff99; text-shadow: 1px 1px #000;}
+        50% {color: #ff00ff; text-shadow: 2px 2px #000;}
+        100% {color: #00ffff; text-shadow: 1px 1px #000;}
+    }
+
+    @keyframes backgroundFlash {
+        0% {background: linear-gradient(to right, #1f1c2c, #928dab);}
+        50% {background: linear-gradient(to right, #ff1c1c, #ff7a00);}
+        100% {background: linear-gradient(to right, #1f1c2c, #928dab);}
+    }
+</style>
+</head>
+<body>
+
+<h1>VIRUS 🧟‍♂️🦠</h1>
+<p>Fast zombies are everywhere! Make tough decisions to survive. ⚰️💀</p>
+
+<div id="game">
+    <div class="question" id="question"></div>
+    <div id="options"></div>
+</div>
+
+<div id="result"></div>
+
+<!-- Sound effect -->
+<audio id="clickSound" src="https://www.soundjay.com/buttons/sounds/button-16.mp3"></audio>
+
+<script>
+const clickSound = document.getElementById("clickSound");
+
+const questions = [
+    {
+        q: "1️⃣ You are running low on water. 💧 What do you do?",
+        options: [
+            {text: "Check the gas station ⛽", score: 3},
+            {text: "Inspect the house 🏠", score: 4},
+            {text: "Inspect your car 🚗", score: 2},
+            {text: "Leave buckets outside and pray for rain 🌧️", score: 0},
+            {text: "Boil local lake water 🌊", score: 5},
+            {text: "Raid neighboring houses 🏚️", score: 1}
+        ]
+    },
+    {
+        q: "2️⃣ You hear screams nearby 😱. Do you investigate?",
+        options: [
+            {text: "Rush to help immediately 🏃‍♂️", score: 2},
+            {text: "Hide and observe 👀", score: 5},
+            {text: "Call out but stay hidden 📢", score: 4},
+            {text: "Ignore it, too risky 🚫", score: 3},
+            {text: "Gather a group and go 👫", score: 1},
+            {text: "Scout from rooftops 🏢", score: 3}
+        ]
+    },
+    {
+        q: "3️⃣ A member of your group is injured 🩹. What do you do?",
+        options: [
+            {text: "Leave them behind 😔", score: 0},
+            {text: "Tend to them carefully 🩺", score: 5},
+            {text: "Move quickly, risk infection ⚡", score: 2},
+            {text: "Ask them to crawl behind 🐛", score: 1},
+            {text: "Split group to help 👫", score: 4},
+            {text: "Carry them alone 💪", score: 3}
+        ]
+    },
+    {
+        q: "4️⃣ Food is running out 🍞. What is your plan?",
+        options: [
+            {text: "Hunt wild animals 🦌", score: 5},
+            {text: "Scavenge abandoned stores 🏬", score: 4},
+            {text: "Ration leftovers 🍱", score: 3},
+            {text: "Steal from neighbors 🏚️", score: 1},
+            {text: "Eat unknown plants 🌿", score: 2},
+            {text: "Go without food today 😓", score: 0}
+        ]
+    },
+    {
+        q: "5️⃣ Zombies approach your shelter 🧟‍♂️. How do you react?",
+        options: [
+            {text: "Fight head-on 🔥", score: 0},
+            {text: "Barricade and wait 🪵", score: 4},
+            {text: "Escape quietly 🚪", score: 5},
+            {text: "Split the group to distract 👫", score: 2},
+            {text: "Hide under debris 🏚️", score: 3},
+            {text: "Use fire as a lure 🔥", score: 1}
+        ]
+    },
+    {
+        q: "6️⃣ A child asks for help 😢. What do you do?",
+        options: [
+            {text: "Take them with you 👶", score: 4},
+            {text: "Leave them behind 💔", score: 0},
+            {text: "Send them to a safer area 🏡", score: 5},
+            {text: "Use them as bait 🧟‍♂️", score: 0},
+            {text: "Teach them to survive 🔪", score: 3},
+            {text: "Find their family 👫", score: 2}
+        ]
+    },
+    {
+        q: "7️⃣ Supplies are limited. Who gets food first? 🍗",
+        options: [
+            {text: "Children first 👶", score: 5},
+            {text: "Elders first 👵", score: 4},
+            {text: "Strongest first 💪", score: 2},
+            {text: "Everyone equally ⚖️", score: 3},
+            {text: "Leader first 👑", score: 1},
+            {text: "Random selection 🎲", score: 0}
+        ]
+    },
+    {
+        q: "8️⃣ You find a safe house 🏠, but it is far. Do you risk traveling?",
+        options: [
+            {text: "Travel immediately 🚗", score: 3},
+            {text: "Wait until night 🌙", score: 4},
+            {text: "Scout route first 👀", score: 5},
+            {text: "Avoid it, too dangerous ❌", score: 2},
+            {text: "Split group and send a scout 🏃‍♂️", score: 3},
+            {text: "Use distraction to cover path 🎯", score: 1}
+        ]
+    },
+    {
+        q: "9️⃣ A member wants to leave the group. Do you let them go?",
+        options: [
+            {text: "Force them to stay ✊", score: 0},
+            {text: "Respect their choice 🤝", score: 5},
+            {text: "Try to convince them 🗣️", score: 4},
+            {text: "Ignore them 😑", score: 2},
+            {text: "Follow them secretly 👀", score: 1},
+            {text: "Offer resources to help them 🌟", score: 3}
+        ]
+    },
+    {
+        q: "🔟 Zombies block your path. How do you proceed?",
+        options: [
+            {text: "Run through 🚀", score: 0},
+            {text: "Find a longer route 🛣️", score: 5},
+            {text: "Distract them with noise 🔊", score: 3},
+            {text: "Hide until they pass 🕵️‍♂️", score: 4},
+            {text: "Fight them 🗡️", score: 1},
+            {text: "Split group to flank them 👫", score: 2}
+        ]
+    },
+    {
+        q: "11️⃣ You find medicine 💊. How do you distribute it?",
+        options: [
+            {text: "Critical injuries first 🩹", score: 5},
+            {text: "Elders first 👵", score: 4},
+            {text: "Strongest first 💪", score: 2},
+            {text: "Randomly 🎲", score: 0},
+            {text: "Leader first 👑", score: 1},
+            {text: "Save for later ⏳", score: 3}
+        ]
+    },
+    {
+        q: "12️⃣ Night is falling 🌙. Do you camp or move?",
+        options: [
+            {text: "Set up camp 🏕️", score: 4},
+            {text: "Move through night 🌌", score: 3},
+            {text: "Hide in buildings 🏢", score: 5},
+            {text: "Travel with lights on 💡", score: 0},
+            {text: "Split group to scout 🏃‍♂️", score: 2},
+            {text: "Rest in a vehicle 🚙", score: 1}
+        ]
+    },
+    {
+        q: "13️⃣ You discover another survivor group 👫. How do you approach?",
+        options: [
+            {text: "Join them immediately 🤝", score: 4},
+            {text: "Observe first 👀", score: 5},
+            {text: "Ignore them ❌", score: 2},
+            {text: "Steal from them 💰", score: 0},
+            {text: "Offer help 🌟", score: 3},
+            {text: "Threaten them ⚔️", score: 1}
+        ]
+    },
+    {
+        q: "14️⃣ A member is becoming a liability. What do you do?",
+        options: [
+            {text: "Abandon them 💔", score: 0},
+            {text: "Help them improve 💪", score: 5},
+            {text: "Limit their role 🛑", score: 3},
+            {text: "Split group temporarily 👫", score: 2},
+            {text: "Force them to contribute ✊", score: 1},
+            {text: "Protect them at all costs 🛡️", score: 4}
+        ]
+    },
+    {
+        q: "15️⃣ You find a vehicle 🚗. Do you use it?",
+        options: [
+            {text: "Use it for quick escape 🏎️", score: 5},
+            {text: "Inspect carefully 🔍", score: 4},
+            {text: "Avoid it, could be trapped ⚠️", score: 3},
+            {text: "Use to carry supplies 📦", score: 2},
+            {text: "Use as a barricade 🛑", score: 1},
+            {text: "Ignore it 🚫", score: 0}
+        ]
+    },
+    {
+        q: "16️⃣ You have extra food 🍖. Do you share?",
+        options: [
+            {text: "Share with group 👫", score: 5},
+            {text: "Keep for yourself 😏", score: 0},
+            {text: "Share with the weak first 👶", score: 4},
+            {text: "Trade with others 💰", score: 3},
+            {text: "Hide it for later ⏳", score: 2},
+            {text: "Use to lure zombies 🧟‍♂️", score: 1}
+        ]
+    },
+    {
+        q: "17️⃣ You need to cross a bridge 🌉. Zombies below. How?",
+        options: [
+            {text: "Run fast across 🏃‍♂️", score: 3},
+            {text: "Scout first 👀", score: 5},
+            {text: "Create distraction 🔊", score: 4},
+            {text: "Wait until night 🌙", score: 2},
+            {text: "Go another way 🛣️", score: 5},
+            {text: "Swim across river 🏊", score: 1}
+        ]
+    },
+    {
+        q: "18️⃣ You are exhausted 😴. Do you rest?",
+        options: [
+            {text: "Rest now 🛌", score: 4},
+            {text: "Push forward 💪", score: 2},
+            {text: "Take short naps ⏳", score: 5},
+            {text: "Sleep in dangerous area ⚠️", score: 0},
+            {text: "Trade sleep for watch duties 👁️", score: 3},
+            {text: "Rest in vehicle 🚙", score: 3}
+        ]
+    },
+    {
+        q: "19️⃣ You find a stash of weapons 🗡️. What do you do?",
+        options: [
+            {text: "Distribute to group 👫", score: 5},
+            {text: "Keep for leader 👑", score: 2},
+            {text: "Use immediately 🔥", score: 3},
+            {text: "Hide them ⏳", score: 4},
+            {text: "Trade for food 🍖", score: 1},
+            {text: "Ignore ⚰️", score: 0}
+        ]
+    },
+    {
+        q: "20️⃣ Zombies breach your safe house 🧟‍♂️🏠. Final decision?",
+        options: [
+            {text: "Fight bravely 🗡️", score: 2},
+            {text: "Escape with group 🏃‍♂️", score: 5},
+            {text: "Sacrifice one to save others 💔", score: 3},
+            {text: "Hide until they leave 🕵️‍♂️", score: 4},
+            {text: "Use fire to cover retreat 🔥", score: 3},
+            {text: "Surrender ⚰️", score: 0}
+        ]
+    }
+];
+
+const survivalResults = [
+    {min: 0, max: 2, text: "0 days"},
+    {min: 3, max: 5, text: "3 days"},
+    {min: 6, max: 8, text: "5 days"},
+    {min: 9, max: 11, text: "8 days"},
+    {min: 12, max: 15, text: "12 days"},
+    {min: 16, max: 20, text: "25 days"},
+    {min: 21, max: 25, text: "28 days"},
+    {min: 26, max: 30, text: "30 days"},
+    {min: 31, max: 35, text: "55 days"},
+    {min: 36, max: 40, text: "60 days"},
+    {min: 41, max: 45, text: "92 days"},
+    {min: 46, max: 50, text: "95 days"},
+    {min: 51, max: 55, text: "109 days"},
+    {min: 56, max: 60, text: "140 days"},
+    {min: 61, max: 65, text: "210 days"},
+    {min: 66, max: 70, text: "364 days"},
+    {min: 71, max: 75, text: "365 days"},
+    {min: 76, max: 80, text: "2 years"},
+    {min: 81, max: 90, text: "3 years"},
+    {min: 91, max: 95, text: "5 years"},
+    {min: 96, max: 98, text: "10 years"},
+    {min: 99, max: 100, text: "30 years"},
+];
+
+let currentQuestion = 0;
+let score = 0;
+
+function showQuestion() {
+    if(currentQuestion >= questions.length){
+        endGame();
+        return;
+    }
+    const q = questions[currentQuestion];
+    document.getElementById("question").innerHTML = q.q;
+    const optionsDiv = document.getElementById("options");
+    optionsDiv.innerHTML = "";
+    q.options.forEach(opt => {
+        const btn = document.createElement("button");
+        btn.innerHTML = opt.text;
+        btn.onclick = () => {
+            clickSound.play();
+            score += opt.score; // Hidden from user
+            currentQuestion++;
+            showQuestion();
+        };
+        optionsDiv.appendChild(btn);
+    });
+}
+
+function endGame(){
+    document.getElementById("game").style.display = "none";
+    let survival = "0 days";
+    for(let res of survivalResults){
+        if(score >= res.min && score <= res.max){
+            survival = res.text;
+            break;
+        }
+    }
+    document.getElementById("result").innerHTML = `You survived: ${survival} 🧟‍♂️💀`;
+}
+
+showQuestion();
+</script>
+
+</body>
+</html>
