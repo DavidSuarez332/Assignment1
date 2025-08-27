@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZOMBZ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Creepster&display=swap');
+body { margin:0; font-family: monospace; background:#111; color:#eee; overflow-x:hidden; }
+#title { font-size:4em; text-align:center; color:#00ff00; animation:flash 1s infinite; font-family:'Creepster', cursive; }
+@keyframes flash { 0%{opacity:0.1}50%{opacity:1}100%{opacity:0.1} }
+#location { width:100%; height:300px; background-size:cover; margin-bottom:10px; border-bottom:4px solid #00ff00; position:relative; }
+#team { display:flex; justify-content:space-around; margin:10px 0; flex-wrap:wrap; }
+.portrait { width:80px; height:80px; border-radius:10px; border:3px solid #eee; position:relative; }
+.portrait img { width:100%; height:100%; border-radius:10px; }
+.status-container { display:flex; justify-content:space-around; margin:10px 0; flex-wrap:wrap; }
+.status-bar { width:120px; height:15px; background:#333; border-radius:8px; overflow:hidden; margin-right:5px; display:inline-block; }
+.status-fill { height:100%; transition:width 0.3s; }
+#log { white-space: pre-wrap; background:rgba(0,0,0,0.6); padding:10px; margin:10px; height:300px; overflow-y:auto; border:2px solid #00ff00; border-radius:10px; }
+#choices { display:flex; flex-wrap:wrap; justify-content:center; margin:10px; }
+button { margin:5px; padding:10px 15px; border-radius:8px; background:linear-gradient(#333,#555); color:#fff; border:none; cursor:pointer; transition:0.2s; font-weight:bold; }
+button:hover { box-shadow:0 0 10px #00ff00; transform:scale(1.05); }
+</style>
+</head>
+<body>
+
+<div id="title">🧟 ZOMBZ 🧟</div>
+<div id="location"></div>
+<div id="team"></div>
+<div class="status-container">
+  Food: <div class="status-bar"><div id="foodBar" class="status-fill" style="background:lime;width:100%"></div></div>
+  Ammo: <div class="status-bar"><div id="ammoBar" class="status-fill" style="background:cyan;width:100%"></div></div>
+  Morale: <div class="status-bar"><div id="moraleBar" class="status-fill" style="background:yellow;width:100%"></div></div>
+  Barricade: <div class="status-bar"><div id="barricadeBar" class="status-fill" style="background:red;width:100%"></div></div>
+</div>
+<div id="log">Welcome to ZOMBZ! Your family must survive…</div>
+<div id="choices"></div>
+<button onclick="startGame()">Start Game</button>
+
+<audio id="bgMusic" autoplay loop>
+  <source src="data:audio/mp3;base64,//YOUR_BASE64_SUSPENSE_MUSIC_HERE" type="audio/mp3">
+</audio>
+<audio id="sfxClick" src="data:audio/mp3;base64,//BASE64_CLICK"></audio>
+<audio id="sfxZombie" src="data:audio/mp3;base64,//BASE64_ZOMBIE"></audio>
+<audio id="sfxDeath" src="data:audio/mp3;base64,//BASE64_DEATH"></audio>
+<audio id="sfxWin" src="data:audio/mp3;base64,//BASE64_WIN"></audio>
+
+<script>
+// ---- Characters ----
+const characters = [
+  {name:'David', role:'Data Analyst', age:24, hp:100, hunger:100, morale:100, strength:70, speed:70, luck:50, img:'//BASE64_DAVID', state:'healthy', quotes:["Keep analyzing!","We can do this together!"]},
+  {name:'Chris', role:'Nurse', age:27, hp:100, hunger:100, morale:100, strength:80, speed:70, luck:50, img:'//BASE64_CHRIS', state:'healthy', quotes:["Stay strong!","Care is key!"]},
+  {name:'Tamara', role:'Mother/Nurse', age:53, hp:100, hunger:100, morale:100, strength:60, speed:50, luck:40, img:'//BASE64_TAMARA', state:'healthy', quotes:["We survived worse.","Family first."]},
+  {name:'Raul', role:'Father/Engineer', age:55, hp:100, hunger:100, morale:100, strength:75, speed:60, luck:50, img:'//BASE64_RAUL', state:'healthy', quotes:["Think it through.","Keep Panfilo close!"]}
+];
+const dog = {name:'Panfilo', type:'Dog', hp:100, hunger:100, img:'//BASE64_DOG', state:'happy'};
+
+// ---- Locations ----
+const locations = ['House','Hospital','Road','Abandoned Mall','Florida Power & Light','Plane','Boat','Island','Castle'];
+
+// ---- Game State ----
+let game = {day:1, location:'', survivors:[], dog:dog, food:100, ammo:50, barricade:50, morale:100};
+let currentPlayer;
+
+// ---- Helper Functions ----
+function startGame(){
+  game.day=1;
+  game.location=locations[Math.floor(Math.random()*locations.length)];
+  game.survivors=JSON.parse(JSON.stringify(characters));
+  currentPlayer=game.survivors[Math.floor(Math.random()*game.survivors.length)];
+  log(`Day 1: ${currentPlayer.name} starts at ${game.location}.`);
+  updateUI();
+  showChoicesMain();
+}
+
+function log(text){document.getElementById('log').innerText+=`\n${text}`; document.getElementById('log').scrollTop=document.getElementById('log').scrollHeight;}
+function updateUI(){
+  const teamDiv=document.getElementById('team'); teamDiv.innerHTML='';
+  game.survivors.forEach(c=>{
+    const div=document.createElement('div'); div.className='portrait';
+    div.innerHTML=`<img src="${c.img}" title="${c.name} | HP:${c.hp} Hunger:${c.hunger} Morale:${c.morale} Strength:${c.strength} Speed:${c.speed} Luck:${c.luck}">`;
+    teamDiv.appendChild(div);
+  });
+  const avgHunger=Math.max(0,Math.floor(game.survivors.reduce((a,c)=>a.hunger+a,0)/game.survivors.length));
+  const avgMorale=Math.max(0,Math.floor(game.survivors.reduce((a,c)=>a.morale+a,0)/game.survivors.length));
+  document.getElementById('foodBar').style.width=avgHunger+'%';
+  document.getElementById('moraleBar').style.width=avgMorale+'%';
+  document.getElementById('ammoBar').style.width=Math.min(100,game.ammo)+'%';
+  document.getElementById('barricadeBar').style.width=Math.max(0,game.barricade)+'%';
+}
+
+// ---- Main Choice ----
+function showChoicesMain(){
+  const choices = [
+    {label:'Scavenge', fn:()=>eventScavenge()},
+    {label:'Use Medkit', fn:()=>eventMedkit()},
+    {label:'Quarantine', fn:()=>eventQuarantine()},
+    {label:'Move Location', fn:()=>eventMove()},
+    {label:'Add Motivational Quote', fn:()=>addQuote()}
+  ];
+  const div=document.getElementById('choices'); div.innerHTML='';
+  choices.forEach(c=>{
+    const btn=document.createElement('button'); btn.innerText=c.label; btn.onclick=()=>{c.fn(); document.getElementById('sfxClick').play();};
+    div.appendChild(btn);
+  });
+}
+
+// ---- Events ----
+function eventScavenge(){
+  log(`${currentPlayer.name} attempts to scavenge for supplies...`);
+  const chance=Math.random();
+  if(chance<0.25){ log('Fast zombies attack! You get bitten.'); currentPlayer.hp-=20; document.getElementById('sfxZombie').play();}
+  else if(chance<0.55){ log('You find food and ammo. Hunger decreases.'); currentPlayer.hunger+=20; currentPlayer.morale+=10; game.food+=15; game.ammo+=5;}
+  else if(chance<0.8){ log('You encounter aggressive humans and flee.'); currentPlayer.hp-=10; game.morale-=5;}
+  else{ log('Nothing useful found.'); }
+  applyHungerEffects();
+  updateUI();
+  nextDay();
+}
+
+function eventMedkit(){
+  log(`${currentPlayer.name} uses a medkit...`);
+  currentPlayer.hp=Math.min(100,currentPlayer.hp+30);
+  currentPlayer.morale+=5;
+  updateUI();
+  nextDay();
+}
+
+function eventQuarantine(){
+  log(`${currentPlayer.name} quarantines the area. Morale slightly drops, but risk reduced.`);
+  currentPlayer.morale-=5;
+  updateUI();
+  nextDay();
+}
+
+function eventMove(){
+  const old=game.location;
+  game.location=locations[Math.floor(Math.random()*locations.length)];
+  log(`${currentPlayer.name} moves from ${old} to ${game.location}.`);
+  updateUI();
+  nextDay();
+}
+
+function addQuote(){
+  const q=prompt("Enter a motivational quote:");
+  if(q) log(`Motivational quote added: "${q}"`);
+}
+
+// ---- Hunger Effects ----
+function applyHungerEffects(){
+  game.survivors.forEach(c=>{
+    if(c.hunger>100)c.hunger=100;
+    if(c.hunger<50){
+      c.hp-=5; c.morale-=5; c.strength=Math.max(0,c.strength-5); c.speed=Math.max(0,c.speed-5);
+      if(c.hp<=0) { c.state='dead'; log(`${c.name} has died of hunger or injuries! 😢`); document.getElementById('sfxDeath').play();}
+      else if(c.hp<20) c.state='about to die';
+      else if(c.hp<50) c.state='injured';
+      else c.state='fatigued';
+    } else c.state='healthy';
+  });
+}
+
+// ---- Day Progression ----
+function nextDay(){
+  game.day++;
+  log(`\n=== Day ${game.day} ===`);
+  currentPlayer=game.survivors.filter(c=>c.state!=='dead')[Math.floor(Math.random()*game.survivors.filter(c=>c.state!=='dead').length)];
+  if(!currentPlayer) { log("All family members have died. Game Over!"); return;}
+  updateUI();
+}
+
+// ---- Dice Roll for About to Die ----
+function diceRoll(survivor){
+  if(survivor.state==='about to die'){
+    const roll=Math.floor(Math.random()*6)+1;
+    log(`${survivor.name} rolls the dice to survive (needs >3): ${roll}`);
+    if(roll>3){ survivor.hp=10; survivor.state='injured'; log(`${survivor.name} survives narrowly! 😮`);}
+    else{ survivor.hp=0; survivor.state='dead'; log(`${survivor.name} has died! ☠`); document.getElementById('sfxDeath').play();}
+  }
+}
+
+// ---- Start Game ----
+</script>
+</body>
+</html>
