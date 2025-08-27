@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pick It Up 💰</title>
+<style>
+body { margin:0; font-family:monospace; background:#fffacd; color:#333; }
+#title { text-align:center; font-size:4em; color:#ff8c00; animation:flash 1s infinite; }
+@keyframes flash {0%{opacity:0.1}50%{opacity:1}100%{opacity:0.1}}
+#scenario { padding:20px; margin:10px auto; max-width:900px; background:#fafad2; border-radius:15px; min-height:120px;}
+#choices { display:flex; flex-wrap:wrap; justify-content:center; margin:10px;}
+button { margin:5px; padding:10px 15px; border-radius:10px; border:none; background:#87cefa; cursor:pointer; font-weight:bold; transition:0.2s;}
+button:hover { background:#00bfff; transform:scale(1.05);}
+#bars { display:flex; justify-content:space-around; max-width:900px; margin:10px auto; flex-wrap:wrap;}
+.bar-container { width:180px; background:#ddd; border-radius:10px; margin:5px;}
+.bar-fill { height:20px; border-radius:10px; transition:width 0.3s;}
+#log { max-width:900px; margin:10px auto; padding:10px; height:300px; overflow-y:auto; background:#ffe4e1; border-radius:10px;}
+</style>
+</head>
+<body>
+
+<div id="title">Pick It Up 💰</div>
+
+<div id="bars">
+  <div>Happiness<div class="bar-container"><div id="happinessBar" class="bar-fill" style="width:100%; background:lime;"></div></div></div>
+  <div>Curiosity<div class="bar-container"><div id="curiosityBar" class="bar-fill" style="width:100%; background:orange;"></div></div></div>
+  <div>Energy<div class="bar-container"><div id="energyBar" class="bar-fill" style="width:100%; background:cyan;"></div></div></div>
+  <div>Luck<div class="bar-container"><div id="luckBar" class="bar-fill" style="width:100%; background:magenta;"></div></div></div>
+</div>
+
+<div id="scenario">💰 You see a shiny coin on the ground. Do you pick it up?</div>
+<div id="choices"></div>
+<div id="log"></div>
+
+<script>
+// ---- Game State ----
+let game = {
+  happiness:80,
+  curiosity:80,
+  energy:80,
+  luck:80,
+  scenarioId:1
+};
+
+// ---- Update Bars ----
+function updateBars(){
+  document.getElementById('happinessBar').style.width = game.happiness + '%';
+  document.getElementById('curiosityBar').style.width = game.curiosity + '%';
+  document.getElementById('energyBar').style.width = game.energy + '%';
+  document.getElementById('luckBar').style.width = game.luck + '%';
+}
+
+// ---- Log Event ----
+function logEvent(text){
+  document.getElementById('log').innerText += text + '\n';
+  document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+}
+
+// ---- Scenario System ----
+function showScenario(){
+  const choicesDiv = document.getElementById('choices');
+  choicesDiv.innerHTML = '';
+  switch(game.scenarioId){
+    case 1:
+      document.getElementById('scenario').innerText = "💰 You see a shiny coin on the ground. Pick it up or leave it?";
+      createButton("Pick it up 🪙", ()=>{
+        game.happiness +=5; game.curiosity+=5; game.luck+=2;
+        logEvent("You pick up the coin. You feel a little luckier! 🍀");
+        game.scenarioId=2;
+        showScenario();
+      });
+      createButton("Leave it 🚶", ()=>{
+        game.happiness-=2; game.curiosity+=1;
+        logEvent("You ignore the coin. Life goes on. 🙂");
+        game.scenarioId=2;
+        showScenario();
+      });
+      break;
+    case 2:
+      document.getElementById('scenario').innerText = "A dog 🐶 approaches wagging its tail. Pet it or ignore it?";
+      createButton("Pet the dog ❤️", ()=>{
+        game.happiness+=10; game.energy+=5;
+        logEvent("The dog happily licks your face! You feel joy. 😄");
+        game.scenarioId=3;
+        showScenario();
+      });
+      createButton("Ignore the dog 😐", ()=>{
+        game.happiness-=5; game.curiosity+=2;
+        logEvent("The dog looks sad and walks away. You feel a tiny pang. 😔");
+        game.scenarioId=3;
+        showScenario();
+      });
+      break;
+    case 3:
+      document.getElementById('scenario').innerText = "You see a street artist painting a vibrant mural. Join in or just watch?";
+      createButton("Join 🎨", ()=>{
+        game.happiness+=15; game.curiosity+=10; game.energy-=5;
+        logEvent("You help paint a masterpiece! Creativity flows. 🌈");
+        game.scenarioId=4;
+        showScenario();
+      });
+      createButton("Watch 👀", ()=>{
+        game.curiosity+=10; game.happiness+=5;
+        logEvent("You enjoy the performance and feel inspired. ✨");
+        game.scenarioId=4;
+        showScenario();
+      });
+      break;
+    case 4:
+      document.getElementById('scenario').innerText = "A sudden rain starts. Jump in puddles or find shelter?";
+      createButton("Jump 🌧️", ()=>{
+        game.happiness+=10; game.energy-=5;
+        logEvent("You splash in puddles! Pure delight. 😆");
+        game.scenarioId=5;
+        showScenario();
+      });
+      createButton("Find shelter 🏠", ()=>{
+        game.happiness+=2; game.energy+=5;
+        logEvent("You stay dry but miss some fun. 🙂");
+        game.scenarioId=5;
+        showScenario();
+      });
+      break;
+    case 5:
+      document.getElementById('scenario').innerText = "You find a treasure map on a bench. Follow it or leave it?";
+      createButton("Follow it 🗺️", ()=>{
+        game.curiosity+=15; game.happiness+=5; game.luck+=5;
+        logEvent("You embark on a mini-adventure, excited! 🚀");
+        game.scenarioId=6;
+        showScenario();
+      });
+      createButton("Leave it ❌", ()=>{
+        game.curiosity-=5; game.happiness+=2;
+        logEvent("You decide to skip the adventure. Maybe next time. 🐾");
+        game.scenarioId=6;
+        showScenario();
+      });
+      break;
+    case 6:
+      document.getElementById('scenario').innerText = "A kid asks if you want to play with bubbles. Join in or decline?";
+      createButton("Join 🎈", ()=>{
+        game.happiness+=20; game.energy-=5;
+        logEvent("Bubbles everywhere! Pure joy. 🥳");
+        game.scenarioId=7;
+        showScenario();
+      });
+      createButton("Decline 😐", ()=>{
+        game.happiness-=5; game.curiosity+=2;
+        logEvent("You politely decline and watch from afar. 🙂");
+        game.scenarioId=7;
+        showScenario();
+      });
+      break;
+    case 7:
+      document.getElementById('scenario').innerText = "You find a hidden puppy behind a bush! Rescue it or leave it?";
+      createButton("Rescue 🐾", ()=>{
+        game.happiness+=25; game.curiosity+=10;
+        logEvent("The puppy happily joins you! A loyal friend. 🐶");
+        game.scenarioId=8;
+        showScenario();
+      });
+      createButton("Leave it 😢", ()=>{
+        game.happiness-=10; game.curiosity+=5;
+        logEvent("You walk away. The puppy whines. 💔");
+        game.scenarioId=8;
+        showScenario();
+      });
+      break;
+    case 8:
+      document.getElementById('scenario').innerText = "A balloon floats by. Grab it or let it go?";
+      createButton("Grab it 🎈", ()=>{
+        game.happiness+=10; game.energy-=2;
+        logEvent("You hold the balloon and feel childlike wonder. ✨");
+        game.scenarioId=9;
+        showScenario();
+      });
+      createButton("Let it go 🌬️", ()=>{
+        game.happiness+=2;
+        logEvent("You watch it float away, small joy lingers. 🙂");
+        game.scenarioId=9;
+        showScenario();
+      });
+      break;
+    case 9:
+      document.getElementById('scenario').innerText = "Time to head home. Walk or run with the dog?";
+      createButton("Walk 🐕", ()=>{
+        game.happiness+=15; game.energy+=5;
+        logEvent("You stroll happily with the puppy, enjoying the day. 🌞");
+        game.scenarioId=10;
+        showScenario();
+      });
+      createButton("Run 🏃‍♂️🐕", ()=>{
+        game.happiness+=30; game.energy-=5;
+        logEvent("You sprint with the puppy! Exhilarating freedom! 🎉");
+        game.scenarioId=10;
+        showScenario();
+      });
+      break;
+    case 10:
+      document.getElementById('scenario').innerText = "🎉 You end the day running away with your new dog, smiling ear to ear! Happiness maxed!";
+      logEvent("🏆 Adventure complete! You embraced joy and wonder today. 🐶💖");
+      document.getElementById('choices').innerHTML = '';
+      break;
+  }
+}
+
+function createButton(text, action){
+  const btn = document.createElement('button');
+  btn.innerText = text;
+  btn.onclick = action;
+  document.getElementById('choices').appendChild(btn);
+}
+
+// ---- Start Game ----
+updateBars();
+showScenario();
+</script>
+</body>
+</html>
