@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>🧪 VIRUS — Retro Survival (Modular)</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="title">🧪 <span class="neon">V I R U S</span> — Retro Survival</div>
+    <div class="controls">
+      <button id="newGameBtn" class="btn">New Game</button>
+      <button id="loadBtn" class="btn">Load</button>
+      <button id="saveBtn" class="btn">Save</button>
+      <button id="exportBtn" class="btn">Export</button>
+      <button id="toggleSound" class="btn">Sound</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <aside class="sidebar">
+      <section class="panel">
+        <h3>Family</h3>
+        <div id="familyPanel"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Map</h3>
+        <div class="mapWrap">
+          <canvas id="mapCanvas" width="720" height="640"></canvas>
+        </div>
+        <div class="kv">Jupiter, FL markers. Click to travel. Blank-white retro base with CRT overlay.</div>
+      </section>
+
+      <section class="panel">
+        <h3>Recent Conversation</h3>
+        <div id="recentConvo" class="recentConvo"></div>
+      </section>
+
+    </aside>
+
+    <section class="main">
+      <div class="status">
+        <div>Day <span id="day">1</span> / <span id="elapsed">0</span> elapsed</div>
+        <div>Danger: <span id="dangerTxt">Low</span></div>
+      </div>
+
+      <div id="narrative" class="narrative">
+        📺 BREAKING: Local news reports unusual infections. The anchor advises head to the Mall.
+      </div>
+
+      <div id="startDecision" class="startDecision"></div>
+
+      <div class="gameArea">
+        <div class="leftCol">
+          <div class="log chatBox" id="chatBox">Game log and npc dialogs appear here.</div>
+          <div id="dialogChoices" class="dialogChoices"></div>
+
+          <canvas id="miniCanvas" width="720" height="260" class="miniCanvas hidden"></canvas>
+          <div id="miniControls"></div>
+
+          <div id="actionButtons" class="actionButtons"></div>
+        </div>
+
+        <div class="rightCol">
+          <div class="panel">
+            <h4>Resources & Lab</h4>
+            <div id="resources" class="small"></div>
+            <div id="researchInfo" class="small">Cure progress: 0 — Notes: 0 — Active: No</div>
+            <div id="cureUI"></div>
+            <canvas id="labCanvas" width="320" height="180" class="labCanvas"></canvas>
+          </div>
+
+          <div class="panel">
+            <h4>Game Log</h4>
+            <div id="log" class="log"></div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer">
+        Tip: Save often. Play up to 365 days. Panfilo is always hungry 🐶
+      </footer>
+    </section>
+
+  </main>
+
+  <!-- Core modules -->
+  <script src="game_core.js"></script>
+  <script src="map.js"></script>
+  <script src="minigames.js"></script>
+  <script src="story.js"></script>
+</body>
+</html>
+/* Retro, CRT-styled CSS for game UI */
+:root{
+  --bg:#040405; --neon:#2bff2b; --muted:#9bd;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,#040405,#071018);color:#dff;font-family:monospace}
+.topbar{display:flex;justify-content:space-between;padding:10px 14px;border-bottom:2px solid rgba(43,255,43,0.05)}
+.title{font-size:22px}
+.neon{color:var(--neon); text-shadow:0 0 8px rgba(43,255,43,.8)}
+.btn{background:#13232a;border-radius:6px;padding:6px 10px;color:#dff;border:1px solid rgba(255,255,255,.04);cursor:pointer;margin-left:6px}
+.container{display:flex;gap:12px;padding:12px}
+.sidebar{width:420px;display:flex;flex-direction:column;gap:12px}
+.panel{background:linear-gradient(180deg,#071018,#041018);padding:10px;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.6)}
+.mapWrap{border:4px solid lime;border-radius:6px;overflow:hidden;background:white}
+.main{flex:1;display:flex;flex-direction:column;gap:12px}
+.status{display:flex;justify-content:space-between}
+.narrative{background:#061018;padding:12px;border-radius:8px;color:#dff;min-height:60px}
+.startDecision{margin-top:6px}
+.gameArea{display:flex;gap:12px}
+.leftCol{flex:1;display:flex;flex-direction:column;gap:8px}
+.rightCol{width:360px;display:flex;flex-direction:column;gap:8px}
+.chatBox{background:#081018;padding:8px;border-radius:8px;height:180px;overflow:auto}
+.actionButtons{display:flex;flex-wrap:wrap;gap:8px}
+.miniCanvas{background:#000;border-radius:6px}
+.hidden{display:none}
+.log{height:220px;overflow:auto;background:#050809;border-radius:6px;padding:8px;color:#bfe}
+.small{font-size:13px;color:var(--muted)}
+.labCanvas{background:#050505;border-radius:6px;border:2px solid rgba(255,255,255,0.03)}
+.recentConvo{font-size:12px;max-height:200px;overflow:auto}
+.char{display:flex;gap:8px;align-items:center;padding:8px;border-radius:6px;background:#041018;margin-bottom:8px}
+.avatar{width:48px;height:48px;border-radius:6px;background:#0b1112;display:flex;align-items:center;justify-content:center}
+.kv{font-size:12px;color:#9bd}
+.footer{color:#9bd;padding-top:6px}
+@media(max-width:980px){
+  .container{flex-direction:column}
+  .sidebar{width:100%}
+  .rightCol{width:100%}
+}
+// game_core.js — main game state & UI wiring
+// This module orchestrates other modules (map.js, minigames.js, story.js)
+
+const MAX_DAYS = 365;
+let state = {
+  day:1, elapsed:0, location:'House', danger:6,
+  base:{ fortified:false, traps:0, barricades:0, workshop:false, aircraft:null },
+  inventory: { food:8, water:8, meds:3, blunt:1, sharp:0, parts:2, fuel:0, tools:1 },
+  family: {},
+  mapPOI: [], survivors: [], journal: [], achievements: [],
+  cureResearch: { stage:0, progress:0, active:false, notes:0 },
+  possibleRescue:false,
+  conversationLog: []
+};
+
+// Ensure core family members with attributes starting at 100
+function ensureFamily(){
+  const ensure = (key,label,role)=>{
+    if(!state.family[key]) state.family[key] = {};
+    const p = state.family[key];
+    p.label = label; p.role = role; p.alive = (typeof p.alive==='undefined')? true : p.alive;
+    p.hp = 100; p.hunger = 100; p.morale = 100; p.strength = 100; p.speed = 100; p.luck = 100;
+    p.state = p.alive ? 'healthy' : 'dead';
+  };
+  ensure('Raul','Raul 👨‍🔧','Father');
+  ensure('Tamara','Tamara 👩‍⚕️','Mother');
+  ensure('Chris','Chris 👨‍⚕️','Oldest Son');
+  ensure('David','David 👨‍🎓','Youngest Son');
+  ensure('Panfilo','Panfilo 🐶','Family Dog');
+  // dog special property
+  state.family.Panfilo.hungerDrain = 3;
+}
+ensureFamily();
+
+// UI helpers
+const $ = s => document.querySelector(s);
+function log(msg){ const el = document.createElement('div'); el.innerHTML = msg; $('#log').prepend(el); $('#chatBox').prepend(el.cloneNode(true)); state.journal.unshift(msg); if(state.journal.length>500) state.journal.pop(); renderRecentConvo(); renderResources(); renderFamilyPanel(); }
+
+// Render functions
+function renderFamilyPanel(){
+  const panel = $('#familyPanel'); panel.innerHTML = '';
+  for(const k of Object.keys(state.family)){
+    const p = state.family[k];
+    const div = document.createElement('div'); div.className='char';
+    const av = document.createElement('div'); av.className='avatar'; av.innerText = p.label.split(' ')[0];
+    const meta = document.createElement('div');
+    meta.innerHTML = `<div><strong>${p.label}</strong> <span class="small">${p.state}</span></div>`;
+    if(!p.alive){
+      meta.innerHTML += `<div class="small">💀 Dead — stats flatlined</div><div class="small">HP:0 Hunger:100 Morale:0 Str:0 Spd:0 Luck:0</div>`;
+    } else {
+      meta.innerHTML += `<div class="small">HP: ${Math.round(p.hp)} | Hunger: ${Math.round(p.hunger)} | Morale: ${Math.round(p.morale)}</div>`;
+    }
+    div.appendChild(av); div.appendChild(meta); panel.appendChild(div);
+  }
+}
+
+function renderResources(){
+  $('#resources').innerHTML = `Food: ${state.inventory.food} 🍱<br/>Water: ${state.inventory.water} 💧<br/>Meds: ${state.inventory.meds} 💊<br/>Parts: ${state.inventory.parts} ⚙️ Fuel: ${state.inventory.fuel}`;
+}
+
+function renderRecentConvo(){
+  const rc = $('#recentConvo'); rc.innerHTML = '';
+  (state.conversationLog || []).slice(0,15).forEach(s => {
+    const d = document.createElement('div'); d.style.padding='4px 0'; d.innerText = s;
+    rc.appendChild(d);
+  });
+}
+
+// Danger & UI updates
+function updateDanger(){ $('#dangerTxt').textContent = state.danger < 30 ? 'Low' : state.danger < 60 ? 'Medium' : state.danger < 85 ? 'High' : 'Extreme'; $('#day').textContent = state.day; $('#elapsed').textContent = state.elapsed; }
+
+// Save/load
+$('#saveBtn').addEventListener('click', ()=>{ localStorage.setItem('virus_save1', JSON.stringify(state)); log('Saved to slot 1.'); });
+$('#loadBtn').addEventListener('click', ()=>{ const s = localStorage.getItem('virus_save1'); if(s){ state = JSON.parse(s); log('Loaded slot 1.'); refreshUI(); } else log('No save found.'); });
+$('#exportBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'}); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'virus_save.json'; a.click(); URL.revokeObjectURL(url);
+});
+
+// New Game
+$('#newGameBtn').addEventListener('click', ()=>{ if(confirm('Start new game? This will reset current progress.')){ state = { day:1, elapsed:0, location:'House', danger:6, base:{}, inventory:{food:8,water:8,meds:3,parts:2,tools:1}, family:{}, mapPOI:[], survivors:[], journal:[], achievements:[], cureResearch:{stage:0,progress:0,active:false,notes:0}, possibleRescue:false, conversationLog:[] }; ensureFamily(); initGame(); log('New game started.'); }})
+
+function refreshUI(){ renderFamilyPanel(); renderResources(); updateDanger(); renderRecentConvo(); renderAchievements(); }
+function renderAchievements(){ $('#achievements')?.innerHTML = (state.achievements || []).map(a=>`• ${a}`).join('<br/>'); }
+
+// Endings
+function disableChoices(){ $('#actionButtons').innerHTML = ''; $('#dialogChoices').innerHTML = ''; }
+function grantAchievement(id, text){ if(!state.achievements.includes(id)){ state.achievements.push(id); log('🏆 '+text); renderAchievements(); } }
+
+// Initialize game (after dependencies)
+function initGame(){
+  ensureFamily();
+  // draw map (from map.js)
+  if(typeof mapInit === 'function') mapInit();
+  // set start decision UI
+  showStartDecision();
+  // add action buttons (map & minigame hooks)
+  addActionButtons();
+  refreshUI();
+}
+
+// Decision: stay or go to mall
+function showStartDecision(){
+  const container = $('#startDecision'); container.innerHTML = '';
+  const stay = document.createElement('button'); stay.className='btn'; stay.innerText='Stay & Fortify House 🏠';
+  stay.onclick = ()=>{ log('Decision: Fortify house.'); fortifyHouse(); container.innerHTML=''; };
+  const go = document.createElement('button'); go.className='btn'; go.innerText='Go to Jupiter Mall 🏬';
+  go.onclick = ()=>{ log('Decision: Go to Mall (news anchor)'); goLocation('Mall'); container.innerHTML=''; };
+  container.appendChild(stay); container.appendChild(go);
+}
+
+// Add action buttons
+function addActionButtons(){
+  const container = $('#actionButtons'); container.innerHTML='';
+  const actions = [
+    {label:'Search House 🥫', action: searchHouse},
+    {label:'Scout Neighborhood 🚶', action: scoutNeighborhood},
+    {label:'Radio 📻', action: radioAttempt},
+    {label:'Fortify House 🪵', action: fortifyHouse},
+    {label:'Search Attic 🔎', action: searchAttic},
+    {label:'Begin Cure Research ⚗️', action: startCureResearch},
+    {label:'Escape QTE (test)', action: ()=> tryEscapeEvent()},
+    {label:'Panfilo: Fetch Under Fire', action: ()=> tryPanfiloFetch()},
+    {label:'Panfilo: Stealth Bark', action: ()=> tryPanfiloStealth()},
+    {label:'Talk: Marta', action: ()=> startDialogue('marta')},
+    {label:'Talk: Luis', action: ()=> startDialogue('luis')}
+  ];
+  actions.forEach(a=>{ const b = document.createElement('button'); b.className='btn'; b.innerText = a.label; b.onclick = ()=>{ a.action(); refreshUI(); }; container.appendChild(b); });
+}
+
+// Expose functions used by other modules
+window.game = {
+  state, log, refreshUI, grantAchievement, setDeadByBite: function(k){ // wrapper
+    if(typeof setDeadByBite === 'function') setDeadByBite(k);
+  }
+};
+
+// small helpers used by story.js and map.js
+window.gameHelpers = { $, rand: n => Math.floor(Math.random()*n), clamp: (v,a,b) => Math.max(a,Math.min(b,v)) };
+
+// Init after scripts loaded
+window.addEventListener('DOMContentLoaded', ()=>{
+  initGame();
+  // start autosave
+  setInterval(()=>{ localStorage.setItem('virus_autosave', JSON.stringify(state)); }, 30000);
+});
+// map.js — simple canvas map with Jupiter, FL markers and clickable overlay.
+// Optional: Mapbox snippet (commented) to enable real tiles.
+
+const mapCanvas = document.getElementById('mapCanvas');
+const mapCtx = mapCanvas.getContext('2d');
+
+const jupiterBounds = { latMin:26.83, latMax:26.97, lonMin:-80.12, lonMax:-80.01 };
+const markers = [
+  { id:'House', lat:26.9283, lon:-80.0956, label:'Family House' },
+  { id:'Mall', lat:26.9231, lon:-80.0720, label:'Jupiter Mall' },
+  { id:'Hospital', lat:26.9112, lon:-80.0672, label:'Jupiter Medical Center' },
+  { id:'Farm', lat:26.8850, lon:-80.1000, label:'Indiantown Farm' },
+  { id:'Beach', lat:26.95, lon:-80.0580, label:'Jupiter Beach' },
+  { id:'Airstrip', lat:26.8328, lon:-80.0737, label:'Palm Beach Airstrip' },
+  { id:'PowerPlant', lat:26.9550, lon:-80.0560, label:'FPL Power Plant' }
+];
+
+function geoToCanvas(lat, lon){
+  const x = ((lon - jupiterBounds.lonMin) / (jupiterBounds.lonMax - jupiterBounds.lonMin)) * mapCanvas.width;
+  const y = (1 - ((lat - jupiterBounds.latMin) / (jupiterBounds.latMax - jupiterBounds.latMin))) * mapCanvas.height;
+  return {x,y};
+}
+
+function drawMapRetro(){
+  // white base
+  mapCtx.fillStyle = '#fff'; mapCtx.fillRect(0,0,mapCanvas.width,mapCanvas.height);
+  // scanlines
+  mapCtx.fillStyle = 'rgba(0,255,0,0.03)';
+  for(let y=0;y<mapCanvas.height;y+=6) mapCtx.fillRect(0,y,mapCanvas.width,1);
+  // grid
+  mapCtx.strokeStyle = 'rgba(43,255,43,0.04)'; mapCtx.lineWidth = 1;
+  for(let x=0;x<mapCanvas.width;x+=80){ mapCtx.beginPath(); mapCtx.moveTo(x,0); mapCtx.lineTo(x,mapCanvas.height); mapCtx.stroke(); }
+  for(let y=0;y<mapCanvas.height;y+=80){ mapCtx.beginPath(); mapCtx.moveTo(0,y); mapCtx.lineTo(mapCanvas.width,y); mapCtx.stroke(); }
+  // markers
+  markers.forEach(m => {
+    const p = geoToCanvas(m.lat, m.lon);
+    mapCtx.beginPath(); mapCtx.fillStyle = 'rgba(0,255,0,0.08)'; mapCtx.arc(p.x, p.y, 18, 0, Math.PI*2); mapCtx.fill();
+    mapCtx.strokeStyle = 'rgba(0,255,0,0.6)'; mapCtx.stroke();
+    mapCtx.fillStyle = '#081'; mapCtx.font = '12px monospace'; mapCtx.fillText(m.label, p.x+24, p.y+6);
+    // attach HTML overlay for reliable clicks
+    if(!document.getElementById('marker_'+m.id)){
+      const el = document.createElement('div'); el.id = 'marker_'+m.id; el.className = 'locationOverlay';
+      el.style.position = 'absolute'; el.style.left = (mapCanvas.offsetLeft + p.x - 40) + 'px'; el.style.top = (mapCanvas.offsetTop + p.y - 12) + 'px';
+      el.style.padding = '4px 6px'; el.style.background = 'rgba(0,255,0,0.08)'; el.style.color = '#081'; el.style.border = '1px solid rgba(0,255,0,0.5)';
+      el.style.borderRadius = '6px'; el.style.cursor = 'pointer'; el.innerText = m.label;
+      el.onclick = ()=> goLocation(m.id);
+      document.body.appendChild(el);
+    }
+  });
+}
+
+// called by game_core init
+function mapInit(){ drawMapRetro(); }
+
+// Travel hook; referenced by map overlays:
+function goLocation(id){
+  // use game_core's global functions
+  const g = window.game;
+  g.log(`➡️ Traveling to ${id}...`);
+  // reduce a bit of food as travel cost
+  g.state.inventory.food = Math.max(0, g.state.inventory.food - 1);
+  // handle location-specific outcomes (keep short here; main logic in core/story)
+  if(typeof handleLocation === 'function'){ handleLocation(id); }
+}
+
+// expose
+window.mapInit = mapInit;
+window.goLocation = goLocation;
+
+/* Optional Mapbox integration:
+   To use Mapbox, uncomment and add your token. That will replace the canvas.
+   Documentation: https://docs.mapbox.com/
+*/
+// minigames.js — Escape QTE, High-Speed Chase, Flying Sim, Panfilo mini-games
+
+const miniCanvas = document.getElementById('miniCanvas');
+const mCtx = miniCanvas.getContext('2d');
+let mgState = {};
+
+// Escape QTE
+function startEscapeQTE(difficulty = 4, onSuccess, onFail){
+  miniCanvas.classList.remove('hidden');
+  mgState = { type:'escape', seq:[], index:0, time:6000, onSuccess, onFail };
+  const keys = ['E','A','D','W','S'];
+  for(let i=0;i<difficulty;i++) mgState.seq.push(keys[Math.floor(Math.random()*keys.length)]);
+  mgState.timer = setInterval(()=>{ mgState.time -= 200; if(mgState.time<=0) endEscape(false); drawEscape(); }, 200);
+  window.addEventListener('keydown', escapeKeyHandler);
+  drawEscape();
+}
+function drawEscape(){
+  mCtx.fillStyle='#000'; mCtx.fillRect(0,0,miniCanvas.width,miniCanvas.height);
+  mCtx.fillStyle='#fff'; mCtx.font='20px monospace'; mCtx.fillText('Escape QTE — press sequence', 20, 30);
+  mCtx.fillText(`Time: ${Math.ceil(mgState.time/1000)}s`, 600, 30);
+  for(let i=0;i<mgState.seq.length;i++){
+    mCtx.fillStyle = (i===mgState.index)? '#ff0' : '#0f0';
+    mCtx.fillRect(40 + (i*120), 80, 100, 100);
+    mCtx.fillStyle = '#000'; mCtx.fillText(mgState.seq[i], 85 + (i*120), 135);
+  }
+}
+function escapeKeyHandler(e){
+  if(mgState.type !== 'escape') return;
+  const need = mgState.seq[mgState.index];
+  if(e.key.toUpperCase() === need){ mgState.index++; if(mgState.index >= mgState.seq.length) endEscape(true); }
+  else endEscape(false);
+}
+function endEscape(success){
+  clearInterval(mgState.timer); window.removeEventListener('keydown', escapeKeyHandler); miniCanvas.classList.add('hidden');
+  if(success){ window.game.log('🏃 Escape succeeded — avoided the bite.'); if(mgState.onSuccess) mgState.onSuccess(); }
+  else { window.game.log('❌ Escape failed — someone bitten.'); if(mgState.onFail) mgState.onFail(); }
+  mgState = {};
+}
+
+// Panfilo Fetch Under Fire
+function startFetchUnderFire(onSuccess, onFail){
+  miniCanvas.classList.remove('hidden'); mgState = { type:'fetch', progress:0, time:8000, onSuccess, onFail };
+  mgState.timer = setInterval(()=>{
+    mgState.time -= 400; mgState.progress += Math.random()*25; drawFetch();
+    if(mgState.time <= 0){
+      clearInterval(mgState.timer); miniCanvas.classList.add('hidden');
+      if(mgState.progress > 60) { window.game.log('🐶 Panfilo fetched food under fire!'); onSuccess(); }
+      else { window.game.log('🐶 Panfilo failed to fetch food and got scared.'); onFail(); }
+    }
+  }, 400);
+  drawFetch();
+}
+function drawFetch(){
+  mCtx.clearRect(0,0,miniCanvas.width,miniCanvas.height);
+  mCtx.fillStyle='#111'; mCtx.fillRect(0,0,miniCanvas.width,miniCanvas.height);
+  mCtx.fillStyle='#fff'; mCtx.fillText('Panfilo — Fetch Under Fire', 20, 30);
+  mCtx.fillStyle='#ffd86b'; mCtx.fillRect(50, 80, Math.min(600, mgState.progress*6), 30);
+}
+
+// Panfilo stealth
+function startStealthBark(onSuccess, onFail){
+  miniCanvas.classList.remove('hidden'); mgState = { type:'stealth', noise:0, time:5000, onSuccess, onFail };
+  mgState.timer = setInterval(()=>{
+    mgState.time -= 250; mgState.noise += Math.random()*12; drawStealth();
+    if(mgState.time <=0){
+      clearInterval(mgState.timer); miniCanvas.classList.add('hidden');
+      if(mgState.noise < 40){ window.game.log('🐶 Panfilo stayed quiet — no horde alerted.'); onSuccess(); }
+      else { window.game.log('🐶 Panfilo barked! A horde heard you.'); onFail(); }
+    }
+  }, 250);
+}
+function drawStealth(){
+  mCtx.clearRect(0,0,miniCanvas.width,miniCanvas.height);
+  mCtx.fillStyle='#000'; mCtx.fillRect(0,0,miniCanvas.width,miniCanvas.height);
+  mCtx.fillStyle='#fff'; mCtx.fillText('Panfilo — Stealth Bark', 20, 30);
+  mCtx.fillStyle='#7be6ff'; mCtx.fillRect(50,80, Math.min(600, mgState.noise*6), 30);
+}
+
+// Expose helper functions consumed by core
+window.tryEscapeEvent = function(){ startEscapeQTE(4, ()=>{
+  // on success
+  Object.values(window.game.state.family).forEach(p=>{ if(p.alive) p.morale = Math.min(100,p.morale+3); });
+  window.game.state.inventory.food = Math.max(0, window.game.state.inventory.food - 1);
+}, ()=>{
+  // on fail -> choose random victim
+  const alive = Object.keys(window.game.state.family).filter(k => window.game.state.family[k].alive);
+  if(alive.length) { const victim = alive[Math.floor(Math.random()*alive.length)]; if(window.setDeadByBite) setDeadByBite(victim); }
+}); };
+
+window.tryPanfiloFetch = function(){ startFetchUnderFire(()=>{ window.game.state.inventory.food += 2; window.game.state.family.Panfilo.hunger = Math.min(200, window.game.state.family.Panfilo.hunger + 50); Object.values(window.game.state.family).forEach(p=>{ if(p.alive) p.morale = Math.min(100,p.morale+4); }); }, ()=>{ if(Math.random()<0.3){ const alive = Object.keys(window.game.state.family).filter(k=>window.game.state.family[k].alive); if(alive.length) { const victim = alive[Math.floor(Math.random()*alive.length)]; if(window.setDeadByBite) setDeadByBite(victim); } } }); };
+
+window.tryPanfiloStealth = function(){ startStealthBark(()=>{ Object.values(window.game.state.family).forEach(p=>{ if(p.alive) p.morale = Math.min(100,p.morale+2); }); }, ()=>{ const alive = Object.keys(window.game.state.family).filter(k=>window.game.state.family[k].alive); if(alive.length) { const victim = alive[Math.floor(Math.random()*alive.length)]; if(window.setDeadByBite) setDeadByBite(victim); } }); };
+// story.js — storyline timeline, dialogues, cure research & NPC behaviors
+
+// Timeline events (chronological)
+const timeline = [
+  { day:1, title:'First Reports', text:'Local news reports unusual infections — stay alert.' },
+  { day:2, title:'Breakdown', text:'Roads clog; services interrupted.' },
+  { day:5, title:'Containment Failed', text:'Government recommends gathering at large safe zones.' },
+  { day:20, title:'Research Emerges', text:'Lab reports indicate possible virus or parasitic fungus.' },
+  { day:60, title:'Factions Rise', text:'Groups scramble for resources; trust erodes.' },
+  { day:120, title:'Long Survival', text:'Months later survival routines form; cure becomes priority.' }
+];
+let timelineIndex = 0;
+function advanceStoryTo(day){
+  while(timelineIndex < timeline.length && day >= timeline[timelineIndex].day){
+    const ev = timeline[timelineIndex];
+    window.game.log(`📜 STORY: ${ev.title} — ${ev.text}`);
+    timelineIndex++;
+  }
+}
+
+// Dialog DB (branching)
+const dialogueDB = {
+  'marta': {
+    speaker:'Marta', portrait:'👩', lines:[
+      { id:'intro', text:'Hola — small clinic at the pier. We need help defending. Trade for meds?', choices:[
+        { text:'Give 1 food', next:'help', effect: ()=>{ if(window.game.state.inventory.food > 0){ window.game.state.inventory.food--; window.game.survivors.push({ name:'Marta', skills:{medical:20}, trust:0.7 }); window.game.log('Marta: Gracias — we will help later.'); } else window.game.log('You lack food to trade.'); } },
+        { text:'Ask questions', next:'ask', effect: ()=>{ window.game.log('Marta: There is an attic dossier in your family home that might explain origins.'); window.game.state.mapPOI.push({name:'Possible Dossier', day: window.game.state.day}); } }
+      ]},
+      { id:'help', text:'We will send a medic periodic help. Beware looters.', choices:[{ text:'Thanks', next:'end' }]},
+      { id:'ask', text:'Search the attic — family memorabilia might reveal ties to the outbreak.', choices:[{ text:'Search Attic', next:'end', effect: ()=>{ window.game.state.foundLore = true; window.game.log('You found old official documents linking the family to cold-war experiments.'); } }] }
+    ]
+  },
+  'luis': {
+    speaker:'Luis', portrait:'🧔', lines:[
+      { id:'intro', text:'I fix generators. Raul, help with parts and I trade fuel.', choices:[
+        { text:'Repair (use 2 parts)', next:'repair', effect: ()=>{ if(window.game.state.inventory.parts >= 2 && window.game.state.family.Raul.alive){ window.game.state.inventory.parts -= 2; window.game.state.inventory.fuel += 3; window.game.log('Luis: Good trade — fuel delivered.'); } else window.game.log('Not enough parts or Raul unavailable.'); } },
+        { text:'Negotiate', next:'negotiate', effect: ()=>{ if(Math.random()<0.6){ window.game.state.inventory.fuel += 1; window.game.log('Luis: I agree to minor trade.'); } else window.game.log('Luis refuses.'); } }
+      ]},
+      { id:'repair', text:'I will show you a route to a fuel depot. Guard it.', choices:[{ text:'Understood', next:'end' }] },
+      { id:'negotiate', text:'We will see...', choices:[{ text:'Leave', next:'end' }] }
+    ]
+  }
+};
+
+function startDialogue(key){
+  const convo = dialogueDB[key];
+  if(!convo) return;
+  $('#chatBox').innerHTML = `<div><strong>${convo.speaker}</strong>: ${convo.lines[0].text}</div>`;
+  showDialogueNode(convo, 'intro');
+}
+
+function showDialogueNode(convo, nodeId){
+  const node = convo.lines.find(l => l.id === nodeId);
+  if(!node) return;
+  $('#chatBox').innerHTML += `<div class="small">${node.text}</div>`;
+  const choicesDiv = $('#dialogChoices'); choicesDiv.innerHTML = '';
+  (node.choices || []).forEach(c => {
+    const b = document.createElement('button'); b.className='btn'; b.innerText = c.text;
+    b.onclick = ()=>{ if(c.effect) c.effect(); if(c.next === 'end'){ $('#chatBox').innerHTML += `<div class="small">Conversation ended.</div>`; } else showDialogueNode(convo, c.next); refreshUI(); };
+    choicesDiv.appendChild(b);
+  });
+}
+
+// Cure research (multi-stage puzzle handled in game_core using UI callbacks)
+// This file exposes helper functions used by game_core
+window.startDialogue = startDialogue;
+window.dialogueDB = dialogueDB;
+window.advanceStoryTo = advanceStoryTo;
+{
+  "portraits": {
+    "Raul": "assets/portraits/raul.png",
+    "Tamara": "assets/portraits/tamara.png",
+    "Chris": "assets/portraits/chris.png",
+    "David": "assets/portraits/david.png",
+    "Panfilo": "assets/portraits/panfilo.png"
+  },
+  "audio": {
+    "ambience": "assets/audio/ambience_loop.mp3",
+    "qteSuccess": "assets/audio/qte_success.mp3",
+    "qteFail": "assets/audio/qte_fail.mp3"
+  },
+  "gifs": {
+    "panic": "assets/gifs/panic.gif"
+  }
+}
+// ui.js — Menu, HUD, Instructions, user-friendly actions & quick controls
+// This file expects window.game, window.gameHelpers, minigame functions, map functions to exist.
+
+(function(){
+  const $ = s => document.querySelector(s);
+  const game = window.game;
+  const helpers = window.gameHelpers || { rand:n=>Math.floor(Math.random()*n), clamp:(v,a,b)=>Math.max(a,Math.min(b,v)) };
+
+  // Create HUD area above the gameArea (compact)
+  function createHUD(){
+    if($('#hud')) return;
+    const hud = document.createElement('div');
+    hud.id = 'hud';
+    hud.style.cssText = 'position:relative;display:flex;gap:8px;align-items:center;margin-bottom:8px';
+    hud.innerHTML = `
+      <div id="hudStatus" style="display:flex;gap:8px;align-items:center">
+        <div style="padding:6px 10px;background:#071018;border-radius:6px">Day <span id="hudDay">1</span></div>
+        <div style="padding:6px 10px;background:#071018;border-radius:6px">Danger <span id="hudDanger">Low</span></div>
+        <div style="padding:6px 10px;background:#071018;border-radius:6px">Food <span id="hudFood">0</span> 🍱</div>
+        <div style="padding:6px 10px;background:#071018;border-radius:6px">Water <span id="hudWater">0</span> 💧</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button id="btnFeedPanfilo" class="btn">Feed Panfilo 🥩</button>
+        <button id="btnFeedFamily" class="btn">Feed Family 🍲</button>
+        <button id="btnQuickSearch" class="btn">Quick Search 🔍</button>
+      </div>
+    `;
+    const leftCol = document.querySelector('.leftCol');
+    leftCol.insertBefore(hud, leftCol.firstChild);
+    // bind
+    $('#btnFeedPanfilo').addEventListener('click', feedPanfilo);
+    $('#btnFeedFamily').addEventListener('click', feedFamily);
+    $('#btnQuickSearch').addEventListener('click', quickSearch);
+  }
+
+  // Menu overlay (Start, Continue, Instructions, Credits)
+  function createMainMenu(){
+    if($('#mainMenu')) return;
+    const menu = document.createElement('div');
+    menu.id = 'mainMenu';
+    menu.style.cssText = 'position:fixed;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);z-index:400';
+    menu.innerHTML = `
+      <div style="background:#020611;padding:18px;border-radius:10px;border:2px solid rgba(43,255,43,0.06);width:560px">
+        <h1 style="margin:0 0 8px 0;color:var(--neon);text-align:center;font-size:32px">🧪 <span style="text-shadow:0 0 12px #2bff2b">V I R U S</span></h1>
+        <p class="small" style="text-align:center;margin:6px 0 12px 0">Retro Zombie Decision Game — Survive with your family in Jupiter, FL.</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button id="menuNew" class="btn">New Game</button>
+          <button id="menuContinue" class="btn">Continue</button>
+          <button id="menuInstr" class="btn">Instructions</button>
+          <button id="menuCredits" class="btn">Credits</button>
+        </div>
+        <div style="text-align:center;margin-top:10px;color:#9bd;font-size:12px">Tip: Use 'Feed Panfilo' often — he's hungry 😅</div>
+      </div>
+    `;
+    document.body.appendChild(menu);
+    // handlers
+    $('#menuNew').addEventListener('click', ()=>{ menu.remove(); document.querySelector('.startDecision')?.scrollIntoView(); /* game.new already handled via New Game button */ });
+    $('#menuContinue').addEventListener('click', ()=>{ menu.remove(); });
+    $('#menuInstr').addEventListener('click', ()=>{ showInstructions(); });
+    $('#menuCredits').addEventListener('click', ()=>{ showCredits(); });
+  }
+
+  // Instructions modal
+  function showInstructions(){
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;left:8%;top:6%;right:8%;bottom:6%;background:#041018;z-index:500;padding:12px;border-radius:8px;overflow:auto;border:2px solid rgba(43,255,43,0.06)';
+    modal.innerHTML = `<h2 style="color:var(--neon)">Instructions</h2>
+      <div class="small">
+        <p>Welcome — the game's goal is to survive as long as possible and either be rescued or find a cure. You control decisions, manage food/water/meds, and handle mini-games (escape, chase, flight, Panfilo minigames).</p>
+        <ul>
+          <li>Feed Panfilo to keep him from barking (he's hungry often).</li>
+          <li>Use Quick Search to look for supplies in nearby locations (risk vs reward).</li>
+          <li>If a character is bitten by a zombie, they die instantly — their stats flatline. Keep everyone alive by avoiding bites.</li>
+          <li>Visit the Mall only if you are prepared — the news anchor may be wrong.</li>
+          <li>Long dialogues with NPCs can provide hints or be traps (deception is hidden).</li>
+        </ul>
+        <p>Mini-games: Win to avoid bites and gain rewards. Lose and risk injury or death.</p>
+        <p>Have fun. Be careful. ¡Buena suerte!</p>
+      </div>
+      <div style="text-align:right;margin-top:8px"><button id="closeInstr" class="btn">Close</button></div>`;
+    document.body.appendChild(modal);
+    $('#closeInstr').addEventListener('click', ()=>modal.remove());
+  }
+
+  // Credits modal
+  function showCredits(){
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;left:20%;top:12%;right:20%;bottom:12%;background:#041018;z-index:500;padding:12px;border-radius:8px;overflow:auto;border:2px solid rgba(43,255,43,0.06)';
+    modal.innerHTML = `<h2 style="color:var(--neon)">Credits</h2>
+      <div class="small">
+        <p>Game skeleton & expansion by assistant. Core assets: you (add portraits/audio in /assets/). Mini-games & map integration are modular for GitHub Pages.</p>
+        <p>Special thanks to the design: family-focused narrative & Panfilo the dog 🐶</p>
+      </div>
+      <div style="text-align:right;margin-top:8px"><button id="closeCredits" class="btn">Close</button></div>`;
+    document.body.appendChild(modal);
+    $('#closeCredits').addEventListener('click', ()=>modal.remove());
+  }
+
+  // HUD updates (keep small & clear)
+  function updateHUD(){
+    $('#hudDay').textContent = (game.state && game.state.day) ? game.state.day : 1;
+    $('#hudDanger').textContent = (game.state && game.state.danger) ? (game.state.danger<30?'Low':game.state.danger<60?'Med':'High') : 'Low';
+    $('#hudFood').textContent = game.state.inventory.food;
+    $('#hudWater').textContent = game.state.inventory.water;
+  }
+
+  // User actions
+  function feedPanfilo(){
+    // Requires food in inventory
+    if(game.state.inventory.food > 0 && game.state.family.Panfilo && game.state.family.Panfilo.alive){
+      game.state.inventory.food -= 1;
+      game.state.family.Panfilo.hunger = Math.min(200, game.state.family.Panfilo.hunger + 40);
+      game.state.family.Panfilo.morale = Math.min(100, game.state.family.Panfilo.morale + 8);
+      game.log('🐶 You feed Panfilo. He wags and seems happier.');
+    } else {
+      game.log('No food to feed Panfilo, or Panfilo is not available.');
+    }
+    updateHUD(); game.refreshUI();
+  }
+
+  function feedFamily(){
+    // Split one food across alive family members (if inventory permits)
+    if(game.state.inventory.food <= 0){
+      game.log('No food to feed the family.');
+      return;
+    }
+    const alive = Object.keys(game.state.family).filter(k => game.state.family[k].alive);
+    if(alive.length === 0){ game.log('No living family members to feed.'); return; }
+    // we consume 1 food to feed family (simple)
+    game.state.inventory.food = Math.max(0, game.state.inventory.food - 1);
+    alive.forEach(k => {
+      const p = game.state.family[k];
+      p.hunger = Math.min(200, p.hunger + 15);
+      p.morale = Math.min(100, p.morale + 5);
+    });
+    game.log('🍲 You ration one food item among the family — small morale boost.');
+    updateHUD(); game.refreshUI();
+  }
+
+  function quickSearch(){
+    // quick, relatively low reward, low cost search action with small risk
+    game.log('🔍 Quick search nearby...');
+    const r = Math.random();
+    if(r < 0.45){
+      const f = 1 + Math.floor(Math.random()*2);
+      game.state.inventory.food += f;
+      game.state.inventory.water += f;
+      game.log(`✅ Quick search found ${f} food and ${f} water.`);
+    } else if(r < 0.75){
+      // noise attracts zombies — attempt a QTE
+      game.log('⚠️ Quick search made noise — Escape QTE triggered!');
+      if(typeof tryEscapeEvent === 'function'){
+        tryEscapeEvent();
+      } else {
+        game.log('Minigame not available — you take damage.');
+        // fallback: injure random alive family member
+        const alive = Object.keys(game.state.family).filter(k => game.state.family[k].alive);
+        if(alive.length){
+          const victim = alive[Math.floor(Math.random()*alive.length)];
+          game.state.family[victim].hp = Math.max(0, game.state.family[victim].hp - 30);
+          game.log(`⚠️ ${game.state.family[victim].label} was injured during the noise.`);
+        }
+      }
+    } else {
+      game.log('No supplies found and the area is quiet.');
+    }
+    updateHUD(); game.refreshUI();
+  }
+
+  // Friendly quick-controls panel below the HUD (mini-buttons)
+  function createQuickPanel(){
+    if($('#quickPanel')) return;
+    const q = document.createElement('div');
+    q.id = 'quickPanel';
+    q.style.cssText = 'display:flex;gap:8px;margin-top:6px';
+    q.innerHTML = `
+      <button id="miniFetch" class="btn">Panfilo Fetch 🎯</button>
+      <button id="miniStealth" class="btn">Panfilo Stealth 🤫</button>
+      <button id="miniEscape" class="btn">Escape QTE ⏱</button>
+    `;
+    document.querySelector('.leftCol').insertBefore(q, document.querySelector('.leftCol').children[1]);
+    $('#miniFetch').addEventListener('click', ()=>{ if(typeof tryPanfiloFetch === 'function') tryPanfiloFetch(); else game.log('Panfilo mini-game currently unavailable.'); });
+    $('#miniStealth').addEventListener('click', ()=>{ if(typeof tryPanfiloStealth === 'function') tryPanfiloStealth(); else game.log('Panfilo mini-game currently unavailable.'); });
+    $('#miniEscape').addEventListener('click', ()=>{ if(typeof tryEscapeEvent === 'function') tryEscapeEvent(); else game.log('Escape QTE unavailable.'); });
+  }
+
+  // Periodic UI tick to keep HUD and state in sync
+  function uiTick(){
+    updateHUD();
+    // show hunger reminders for Panfilo
+    const dog = game.state.family.Panfilo;
+    if(dog && dog.alive && dog.hunger < 70){
+      // only log occasionally to avoid spam
+      if(Math.random() < 0.2) game.log('🐶 Panfilo is getting hungry — consider feeding him.');
+    }
+  }
+  setInterval(uiTick, 6000);
+
+  // Initialize UI on DOM ready
+  window.addEventListener('DOMContentLoaded', ()=>{
+    createHUD();
+    createMainMenu();
+    createQuickPanel();
+    updateHUD();
+  });
+
+  // Expose for debugging
+  window.UI = { feedPanfilo, feedFamily, quickSearch, updateHUD };
+
+})();
+
+      </script>
+      </body>
+      </html>
+        
+        
