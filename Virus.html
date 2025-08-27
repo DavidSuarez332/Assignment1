@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Virus — Retro Survival</title>
+<style>
+:root{--bg:#060606;--neon:#2bff2b;--accent:#ff3b8f;--panel:#0b0b12}
+html,body{height:100%;margin:0;font-family:monospace;background:linear-gradient(180deg,#040404 0%, #0b0b12 100%);color:#e7f7e7}
+/* Title flashing */
+.title{font-size:48px;letter-spacing:4px;text-align:center;padding:10px;margin-top:10px}
+.title .glow{display:inline-block;padding:6px 12px;border-radius:6px;background:linear-gradient(90deg,rgba(0,255,0,.08), rgba(0,255,0,.02));animation:flash 1s linear infinite}
+@keyframes flash{0%{text-shadow:0 0 4px rgba(0,255,0,.2)}50%{text-shadow:0 0 30px rgba(0,255,0,.8)}100%{text-shadow:0 0 4px rgba(0,255,0,.2)}}
+.container{display:grid;grid-template-columns:360px 1fr;gap:12px;padding:12px}
+.sidebar{background:linear-gradient(180deg,#071016,#0b0f15);border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+#family{display:flex;flex-direction:column;gap:10px}
+.char{background:#041018;border-radius:8px;padding:10px;color:#dfe;display:flex;gap:8px;align-items:center}
+.char .avatar{width:68px;height:68px;border-radius:8px;background:linear-gradient(45deg,#1a1a1a,#071b2a);display:flex;align-items:center;justify-content:center;font-size:34px}
+.char .meta{flex:1}
+.char h4{margin:0 0 6px 0}
+.bars{display:grid;grid-template-columns:1fr 48px;gap:6px;align-items:center}
+.bar{background:#0f1b1a;border-radius:6px;height:12px;overflow:hidden}
+.fill{height:12px;background:linear-gradient(90deg,#58ff58,#2ec400)}
+.small{font-size:12px;color:#9bd}
+.mainpanel{background:linear-gradient(180deg,#061018,#06121a);border-radius:12px;padding:12px;min-height:80vh}
+.scene{background:linear-gradient(180deg,#07121a,#051018);border-radius:8px;padding:12px;min-height:280px;color:#cfe}
+.choices{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{background:#13232a;border:2px solid rgba(255,255,255,.04);padding:8px 12px;border-radius:8px;cursor:pointer}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.6)}
+.log{height:160px;overflow:auto;background:#050809;border-radius:6px;padding:8px;margin-top:8px;color:#bfe}
+.flash{animation:flash 0.9s linear infinite}
+.footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.tiny{font-size:12px;color:#9aa}
+.progressLabel{font-size:12px}
+.warn{color:#ffb4b4}
+.meterVal{font-weight:bold}
+/* retro CRT */
+.crt{mix-blend-mode:screen}
+/* Dog emoji area */
+.dogBox{background:linear-gradient(90deg,#221a10,#1a2a2a);padding:8px;border-radius:8px;margin-top:8px}
+.inputQuote{display:flex;gap:6px;margin-top:6px}
+.muted{opacity:.8}
+
+/* Responsive */
+@media(max-width:900px){.container{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="title"><span class="glow" style="font-family: 'Impact', fantasy; color: var(--neon);">🧪 V I R U S</span></div>
+<div class="container">
+  <div class="sidebar">
+    <div class="tiny">Starting location: <span class="small">🏠 The House — Jupiter, Florida</span></div>
+    <div id="family" aria-live="polite"></div>
+
+    <div class="dogBox">
+      <div><strong>🐶 Panfilo</strong> — American Bully, fat & hungry. Helps sniff out food but barks & runs off. Raul debates whether to keep him or... (¡no comas al perro!).</div>
+      <div id="dogStatus" class="small" style="margin-top:6px">Happy, hungry, protective.</div>
+    </div>
+
+    <div style="margin-top:10px" class="tiny">Survival states: <span id="survStates" class="small">healthy, fatigued, injured, about to die, dead</span></div>
+
+    <div style="margin-top:10px" class="tiny">Lore hint: search the attic to discover family past & why the attack is personal.</div>
+
+    <div style="margin-top:10px"><button class="btn" id="saveBtn">Save Game (local)</button> <button class="btn" id="loadBtn">Load Game</button></div>
+  </div>
+
+  <div class="mainpanel">
+    <div class="scene" id="scene">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:20px;font-weight:700">🏠 The House — Day <span id="day">1</span></div>
+          <div class="small muted">Location-based events biased to Jupiter, FL: beaches, canals, palm-lined neighborhoods, power outages.</div>
+        </div>
+        <div style="text-align:right">
+          <div class="tiny">Objective: <strong>Survive</strong> + keep the family alive. Options: find a cure ⚗️ or be rescued 🚁</div>
+          <div class="small">NPC deception rate: ~80% — trust sparingly.</div>
+        </div>
+      </div>
+
+      <div id="narrative" style="margin-top:12px;color:#dff">You wake up in the house. Panfilo is whining. The radio crackles with static. Roads are chaotic. Zombies move fast in packs.</div>
+
+      <div class="choices" id="choices" style="margin-top:12px"></div>
+
+      <div class="log" id="log"></div>
+
+      <div class="footer">
+        <div class="tiny">Press choices to play. Some events are rare — hidden wins exist.</div>
+        <div>
+          <button class="btn" id="searchAtticBtn">🔎 Search the Attic</button>
+          <button class="btn" id="restBtn">⛺ Rest (skip time)</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:12px">
+      <div style="flex:1;background:#071018;padding:8px;border-radius:8px">
+        <div style="font-weight:700;margin-bottom:6px">Controls & Interaction</div>
+        <div class="small">- Click decisions to pick. Each decision costs time and resources. Hunger includes thirst. When hunger rises, hp, morale, strength, speed fall. Family members can die; gameplay continues.</div>
+
+        <div style="margin-top:8px">
+          <label class="progressLabel">Danger Level: <span id="danger">Low</span></label>
+          <div style="height:10px;background:#021018;border-radius:6px;margin-top:4px;overflow:hidden"><div id="dangerBar" style="height:10px;width:10%;background:#ffb86b"></div></div>
+        </div>
+      </div>
+
+      <div style="width:360px;background:#071018;padding:8px;border-radius:8px">
+        <div style="font-weight:700;margin-bottom:6px">Add a motivational quote</div>
+        <div class="inputQuote"><input id="quoteInput" placeholder="Type a line to motivate" style="flex:1;padding:6px;border-radius:6px;border:1px solid #223" /><button class="btn" id="addQuoteBtn">Add</button></div>
+        <div class="small" style="margin-top:8px">Family will respond depending on morale; ocasional Spanish replies included.</div>
+
+        <div style="margin-top:12px;font-weight:700">Sound</div>
+        <div class="small">Looping suspense track (synth) and click SFX enabled by default.</div>
+        <div style="margin-top:6px"><button class="btn" id="toggleSound">Toggle Sound</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* --- Game Data --- */
+const initialState = {
+  day:1,
+  location:'House',
+  danger:10,
+  panfilo:{mood:80,hunger:70},
+  family:{
+    David:{age:24,role:'youngest son',job:'Data Science student',hp:100,hunger:10,morale:80,strength:50,speed:55,luck:40,alive:true,state:'healthy'},
+    Chris:{age:27,role:'oldest son',job:'Nurse',hp:110,hunger:12,morale:75,strength:60,speed:50,luck:38,alive:true,state:'healthy'},
+    Tamara:{age:53,role:'mother',job:'Nurse (30 yrs)',hp:130,hunger:8,morale:85,strength:45,speed:40,luck:42,alive:true,state:'healthy'},
+    Raul:{age:55,role:'father',job:'Engineer - FPL',hp:140,hunger:9,morale:70,strength:65,speed:45,luck:50,alive:true,state:'healthy'}
+  },
+  inventory:{food:6,water:6,meds:2,blunt:1,sharp:0,explosives:0},
+  foundLore:false,
+  soundtrackOn:true
+}
+
+let state = JSON.parse(JSON.stringify(initialState));
+
+/* --- DOM references --- */
+const familyEl = document.getElementById('family');
+const narrative = document.getElementById('narrative');
+const choicesEl = document.getElementById('choices');
+const logEl = document.getElementById('log');
+const dayEl = document.getElementById('day');
+const dangerEl = document.getElementById('danger');
+const dangerBar = document.getElementById('dangerBar');
+const dogStatus = document.getElementById('dogStatus');
+
+/* --- Audio: simple looping ambience using WebAudio --- */
+let audioCtx, masterGain, osc1, osc2, lfo;
+function initAudio(){
+  if(audioCtx) return;
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  masterGain = audioCtx.createGain(); masterGain.gain.value = 0.06; masterGain.connect(audioCtx.destination);
+  // Two detuned oscillators and LFO for wobble
+  osc1 = audioCtx.createOscillator(); osc2 = audioCtx.createOscillator();
+  osc1.type='sine'; osc2.type='sawtooth'; osc1.frequency.value=120; osc2.frequency.value=98;
+  const filt = audioCtx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=800;
+  osc1.connect(filt); osc2.connect(filt);
+  filt.connect(masterGain);
+  osc1.start(); osc2.start();
+  // subtle pulsing
+  lfo = audioCtx.createOscillator(); lfo.type='sine'; lfo.frequency.value=0.15;
+  const lfoGain = audioCtx.createGain(); lfoGain.gain.value=40;
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc1.frequency); lfoGain.connect(osc2.frequency);
+  lfo.start();
+}
+
+function toggleSound(){
+  if(!audioCtx) initAudio();
+  if(masterGain.gain.value>0.001){masterGain.gain.value=0.001; state.sound=false;} else {masterGain.gain.value=0.06; state.sound=true}
+}
+
+/* Click SFX */
+function clickSFX(){
+  if(!audioCtx) initAudio();
+  const g=audioCtx.createGain(); g.gain.value=0.12; g.connect(audioCtx.destination);
+  const o=audioCtx.createOscillator(); o.type='square'; o.frequency.value=600; o.connect(g); o.start();
+  setTimeout(()=>{o.stop();g.disconnect()},80);
+}
+
+/* --- Utilities --- */
+function rand(n){return Math.floor(Math.random()*n)}
+function log(text){ const p=document.createElement('div'); p.innerHTML=text; logEl.prepend(p); }
+
+/* --- Render family panel --- */
+function renderFamily(){
+  familyEl.innerHTML='';
+  for(const [name,person] of Object.entries(state.family)){
+    const div = document.createElement('div'); div.className='char';
+    const avatar = document.createElement('div'); avatar.className='avatar'; avatar.innerHTML=getEmojiFor(name);
+    const meta = document.createElement('div'); meta.className='meta';
+    meta.innerHTML=`<h4>${name} <span class="small">(${person.age})</span> <span style='font-size:12px;color:#9ad'>&nbsp;— ${person.role}</span></h4>`;
+    meta.innerHTML += `<div class="bars"><div><div class="small">HP <span class="meterVal">${Math.max(0,person.hp)}</span></div><div class="bar"><div class="fill" style="width:${Math.max(0,person.hp)}%"></div></div></div><div class="small">${person.state}</div></div>`;
+    meta.innerHTML += `<div style="height:6px"></div>`;
+    meta.innerHTML += `<div class="bars"><div><div class="small">Hunger <span class="meterVal">${person.hunger}</span></div><div class="bar"><div class="fill" style="width:${person.hunger}% ; background:linear-gradient(90deg,#ffd86b,#ff7b2b)"></div></div></div><div class="small"> </div></div>`;
+    meta.innerHTML += `<div style="height:6px"></div>`;
+    meta.innerHTML += `<div class="bars small"><div><div>Morale ${person.morale}</div><div class="bar"><div class="fill" style="width:${person.morale}% ; background:linear-gradient(90deg,#7be6ff,#2b9cff)"></div></div></div><div style='font-size:11px'>Str:${person.strength} Spd:${person.speed} Luck:${person.luck}</div></div>`;
+
+    div.appendChild(avatar); div.appendChild(meta);
+    familyEl.appendChild(div);
+  }
+}
+
+function getEmojiFor(name){
+  if(name==='David') return '👨‍💻';
+  if(name==='Chris') return '🩺';
+  if(name==='Tamara') return '👩‍⚕️';
+  if(name==='Raul') return '👷';
+  return '🙂';
+}
+
+/* --- Hunger dynamics --- */
+function applyHungerEffects(person){
+  // hunger is 0..100 where 100 is starving
+  const hungerLevel = person.hunger;
+  // as hunger increases beyond 40, reduce others gradually
+  const penalty = Math.max(0, (hungerLevel-30)/2); // up to ~35
+  person.hp = Math.max(0, Math.round(person.hp - penalty*0.4));
+  person.morale = Math.max(0, Math.round(person.morale - penalty*0.2));
+  person.strength = Math.max(0, Math.round(person.strength - penalty*0.2));
+  person.speed = Math.max(0, Math.round(person.speed - penalty*0.15));
+}
+
+/* --- Update states, danger --- */
+function updateSurvivalState(person){
+  if(!person.alive) return;
+  if(person.hp<=0){ person.alive=false; person.state='dead'; person.hp=0; logDeath(person); return; }
+  if(person.hp<25) person.state='about to die';
+  else if(person.hp<50) person.state='injured';
+  else if(person.hp<75) person.state='fatigued';
+  else person.state='healthy';
+}
+
+function logDeath(person){
+  const desc = `${person.role} ${personName(person)} has died. The family mourns — morale drops.`;
+  log(`<span class='warn'>💀 ${personName(person)} — ${desc}</span>`);
+  // morale impact
+  for(const p of Object.values(state.family)){
+    if(p.alive){ p.morale = Math.max(0,p.morale-20); }
+  }
+}
+function personName(p){
+  // find name by reference
+  for(const [n,pp] of Object.entries(state.family)) if(pp===p) return n;
+  return 'Family member';
+}
+
+/* --- Choice system --- */
+function setChoices(opts){
+  choicesEl.innerHTML='';
+  opts.forEach(o=>{
+    const b = document.createElement('button'); b.className='btn'; b.innerHTML=o.label; b.onclick=()=>{if(state.sound) clickSFX(); o.action(); renderAll();}; choicesEl.appendChild(b);
+  });
+}
+
+/* --- Day tick: called after every decision or rest --- */
+function tick(days=1){
+  state.day+=days; dayEl.textContent=state.day;
+  // hunger increases slightly per day (includes thirst)
+  for(const p of Object.values(state.family)){
+    if(!p.alive) continue;
+    p.hunger = Math.min(100, p.hunger + (4 + rand(6))); // 4-9
+    applyHungerEffects(p);
+    // chance of disease if hunger>70
+    if(p.hunger>75 && rand(100)<10){ p.hp -= 10 + rand(10); log(`${emojiForName(personName(p))} <strong>${personName(p)}</strong> fell ill from starvation/disease.`); }
+    updateSurvivalState(p);
+    if(p.state==='about to die'){ // roll dice
+      const roll = rand(6)+1;
+      log(`<strong>${personName(p)}</strong> is about to die. Must receive a number higher than 3 to survive. Rolled: ${roll}`);
+      if(roll>3){ p.hp += 10; p.state='injured'; log(`${personName(p)} clings to life.`); } else { p.hp=0; updateSurvivalState(p);}    }
+  }
+  // dog gets hungrier
+  state.panfilo.hunger = Math.min(100, state.panfilo.hunger + 8 + rand(8));
+  if(state.panfilo.hunger>90) dogStatus.textContent='Panfilo is desperate and may run off or cause trouble.';
+  // danger escalates slowly
+  state.danger = Math.min(100, state.danger + 2 + rand(6));
+  updateDanger();
+}
+
+function updateDanger(){
+  dangerEl.textContent = state.danger<30? 'Low' : state.danger<60? 'Medium' : state.danger<85? 'High' : 'Extreme';
+  dangerBar.style.width = state.danger+'%';
+}
+
+/* --- Example choices at start --- */
+function startChoices(){
+  setChoices([
+    {label:'Look for food downstairs 🥫', action:()=>{searchHouse(); tick();}},
+    {label:'Scout the neighborhood 🚶‍♂️', action:()=>{scout(); tick();}},
+    {label:'Attempt to radio for rescue 📻', action:()=>{radio(); tick();}},
+    {label:'Check the attic 🔎', action:()=>{searchAttic(); tick();}}
+  ]);
+}
+
+/* --- Event implementations --- */
+function searchHouse(){
+  narrative.textContent='You and the family split up to search for canned food and clean water. Panfilo digs through a closet.';
+  // random outcome
+  const r = rand(100);
+  if(r<40){ // success
+    const found = 1 + rand(3);
+    state.inventory.food += found; state.inventory.water += found;
+    log(`✅ Found ${found} food and water. Panfilo sniffed them out. 🐶`);
+    // small morale boost
+    for(const p of Object.values(state.family)) if(p.alive) p.morale = Math.min(100,p.morale+5);
+  } else if(r<70){
+    log(`⚠️ Disturbance: a group of feral raccoons made noise. Panfilo barked and drew attention.`);
+    // small danger increase
+    state.danger += 6;
+    // small injury chance
+    if(rand(100)<20){ const victim = randomAlive(); victim.hp -= 8; log(`${getEmojiForName(victim)} ${nameOf(victim)} got scratched.`); updateSurvivalState(victim); }
+  } else {
+    log(`💥 Disaster: a small structural collapse while searching — you drop a heavy shelf.`);
+    // chance of death
+    if(rand(100)<18){ const v=randomAlive(); v.hp -= 40; log(`${getEmojiForName(v)} ${nameOf(v)} badly hurt by falling debris.`); updateSurvivalState(v);} else { log('Everyone survives but shaken.'); }
+    state.danger += 12;
+  }
+}
+
+function scout(){
+  narrative.textContent='You step outside and see the neighborhood: cars abandoned, a broken supply truck in the canal, and distant screaming.';
+  const r = rand(100);
+  if(r<35){ // meet helpful stranger but 80% chance deception
+    const deceit = rand(100) < 80;
+    if(deceit){ log('A stranger offers help but seems off — they may be scavengers. They asked for your supplies.'); if(rand(100)<50){ // they steal
+        state.inventory.food = Math.max(0, state.inventory.food - 1); log('They managed to steal 1 food item during negotiation.'); state.danger += 8; }
+      }
+    else { state.inventory.food += 2; state.inventory.meds = (state.inventory.meds||0)+1; log('You found a helpful nurse who shared supplies.'); }
+  } else if(r<70){
+    // encounter zombies
+    log('Large group of fast zombies spotted. They move in a pack and bite hard. Attacking them is rarely correct.');
+    if(rand(100)<15){ // collision
+      const v=randomAlive(); v.hp -= 25; log(`${getEmojiForName(v)} ${nameOf(v)} was bitten while escaping.`); if(v.hp<=0){updateSurvivalState(v);} else {v.morale -= 10;} state.danger += 15;
+    } else { log('You escaped but at cost of time and water.'); state.inventory.water = Math.max(0,state.inventory.water-1); }
+  } else {
+    // find car or boat but requires fuel/repairs
+    log('You discover an old truck that might be repaired — a potential escape but needs fuel and time.');
+    if(rand(100)<12){ // rare win condition trigger
+      log('Hidden: You found a map with a marked safe zone — this could lead to rescue (rare).'); state.hiddenMap=true;
+    }
+  }
+}
+
+function radio(){
+  narrative.textContent='You try the radio. Static... then a faint voice offers coordination but asks for a location.';
+  // chance trap
+  if(rand(100)<50){ log('It was a lure; broadcasting your location draws a horde. Danger spikes.'); state.danger += 30; // zombies attracted
+    // casualties possible
+    if(rand(100)<25){ const v=randomAlive(); v.hp -= 30; log(`${nameOf(v)} was injured by the attracted horde.`); updateSurvivalState(v);} }
+  else { log('A real rescue signal! But they ask you to hold out at a risky rendezvous. Might be rescue route.'); state.possibleRescue=true; }
+}
+
+function searchAttic(){
+  narrative.textContent='You climb the ladder into the attic. Old trunks, family letters, a faded jacket with a government patch.';
+  if(!state.foundLore && rand(100)<85){
+    state.foundLore=true; log('🔎 You found memorabilia: letters from a deceased secret service relative — hints that your family may be tied to why the attack began. This revelation complicates choices.');
+    // story reveal
+    narrative.innerHTML += '<div style="margin-top:8px;color:#ffd">The letters hint at covert operations and a dangerous secret — perhaps why North Korean forces used biological weapons. El misterio se siente pesado.</div>';
+  } else {
+    log('Mostly dust and old trophies. But Tamara finds a faded first-aid manual.'); state.inventory.meds = (state.inventory.meds||0)+1;
+  }
+}
+
+/* --- Helpers --- */
+function randomAlive(){
+  const arr = Object.entries(state.family).filter(([n,p])=>p.alive).map(a=>a[0]); if(arr.length===0) return null; const name = arr[rand(arr.length)]; return state.family[name];
+}
+function getEmojiForName(name){ if(name==='David') return '👨‍💻'; if(name==='Chris') return '🩺'; if(name==='Tamara') return '👩‍⚕️'; if(name==='Raul') return '👷'; return '🙂'; }
+function nameOf(person){ for(const [n,p] of Object.entries(state.family)) if(p===person) return n; return 'Unknown'; }
+
+/* --- Add motivational quote --- */
+const quoteInput = document.getElementById('quoteInput'); document.getElementById('addQuoteBtn').onclick = ()=>{
+  const q = quoteInput.value.trim(); if(!q) return; // family responds
+  log(`You tell your family: "${escapeHtml(q)}"`);
+  for(const [n,p] of Object.entries(state.family)){
+    if(!p.alive) continue;
+    const reaction = Math.random()*100 < p.morale ? 'responds encouragingly' : 'seems skeptical';
+    const spanish = Math.random()<0.25 ? ' — "¡Ánimo!"' : '';
+    log(`${getEmojiForName(n)} <strong>${n}</strong> ${reaction}.${spanish}`);
+    if(reaction.includes('encourag')) p.morale = Math.min(100,p.morale+5);
+    else p.morale = Math.max(0,p.morale-3);
+  }
+  quoteInput.value='';
+}
+
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* --- Random world events each tick while idle (e.g., gangs, power shortages) --- */
+function randomWorldEvent(){
+  const r = rand(100);
+  if(r<12){ log('A gang roams nearby looking for supplies — they are dangerous.'); state.danger += 12; if(rand(100)<30){ // attack
+    const v=randomAlive(); v.hp -= 20; log(`${nameOf(v)} was beaten in the scuffle.`); updateSurvivalState(v);} }
+  else if(r<20){ log('Power outage deepens; streetlights die. Roads become confusing.'); }
+  else if(r<28){ log('A care package parachute lands nearby but is contested by a group of desperate people.'); if(rand(100)<40){ state.inventory.food += 3; log('You managed to snag some supplies from the scramble.'); }}
+}
+
+/* --- Hidden win conditions & ending checks --- */
+function checkVictory(){
+  // rescue
+  if(state.possibleRescue && state.day>3 && Math.random()<0.03){ narrative.innerHTML='<div style="font-size:18px;color:#bffaec">🚁 A rescue chopper arrives — you signaled; after tough choices you are airlifted. You survived.</div>'; log('RARE: Rescue extracted the family.'); disableChoices(); return true; }
+  // cure: rare
+  if(state.foundLore && state.inventory.meds>4 && Math.random()<0.01){ narrative.innerHTML='<div style="font-size:18px;color:#bffaec">⚗️ You uncovered data in the attic and managed to synthesize a rare prototype cure. The fight may end here.</div>'; log('HIDDEN WIN: Cure found.'); disableChoices(); return true; }
+  return false;
+}
+
+function disableChoices(){ choicesEl.innerHTML=''; }
+
+/* --- Game master loop & render --- */
+function renderAll(){ renderFamily(); updateDanger(); dayEl.textContent=state.day; if(checkVictory()) return; // present choices based on danger and state
+  // dynamic choices
+  const opts=[];
+  opts.push({label:'Search house 🥫', action:()=>{searchHouse(); tick();}});
+  opts.push({label:'Scout neighborhood 🚶', action:()=>{scout(); tick();}});
+  opts.push({label:'Radio for help 📻', action:()=>{radio(); tick();}});
+  opts.push({label:'Rest (pass time) ⛺', action:()=>{restAction();}});
+  opts.push({label:'Check on Panfilo 🐶', action:()=>{checkDog(); tick();}});
+  opts.push({label:'Trade with strangers 🤝', action:()=>{trade(); tick();}});
+  setChoices(opts);
+}
+
+/* --- Additional actions --- */
+function restAction(){ narrative.textContent='You attempt to rest and recover. Short naps but the world outside grows louder.'; for(const p of Object.values(state.family)){ if(p.alive){ p.hp=Math.min(150,p.hp+10); p.hunger=Math.min(100,p.hunger+6); p.morale=Math.max(0,p.morale-2);} } tick(); log('Rested: minor recovery and increased hunger.'); }
+
+function checkDog(){ narrative.textContent='Panfilo sniffs the air. He barks — maybe he found food or trouble.'; if(rand(100)<40){ state.inventory.food += 1; state.panfilo.hunger = Math.max(0,state.panfilo.hunger-20); log('Panfilo found a half-eaten sandwich near the canal.'); } else { if(rand(100)<35){ // dog runs off
+    log('Panfilo ran off chasing something and drew a horde near the fence. Quick decision needed.'); state.danger += 18; if(rand(100)<30){ const v=randomAlive(); v.hp -= 15; log(`${nameOf(v)} got injured calming Panfilo.`); updateSurvivalState(v);} }
+  else { log('Panfilo snores.'); }} }
+
+function trade(){ narrative.textContent='You attempt to trade with a stranger for supplies.'; // high deception
+  if(rand(100)<80){ // deceit
+    log('The trader was a scam; you lose items and get suspicion.'); state.inventory.food = Math.max(0,state.inventory.food-1); state.danger += 10; for(const p of Object.values(state.family)) if(p.alive) p.morale -= 5;
+  } else { log('A fair trade: you gain meds and morale.'); state.inventory.meds = (state.inventory.meds||0)+1; for(const p of Object.values(state.family)) if(p.alive) p.morale += 6; }
+}
+
+/* --- Initialization & events --- */
+function startGame(){ renderAll(); log('Game started. The family is from a Cuban-Hispanic background — phrases show up sometimes. "Vamos familia" is common.'); if(state.sound) initAudio();
+  setInterval(()=>{ randomWorldEvent(); renderFamily(); }, 45000); // slow world events
+}
+
+/* Save / Load */
+document.getElementById('saveBtn').onclick = ()=>{ localStorage.setItem('virus_save', JSON.stringify(state)); log('Game saved locally.'); };
+document.getElementById('loadBtn').onclick = ()=>{ const s=localStorage.getItem('virus_save'); if(s){ state=JSON.parse(s); renderAll(); log('Game loaded.'); } else log('No save found.'); };
+
+/* Sound toggle */
+document.getElementById('toggleSound').onclick = ()=>{ if(!audioCtx) initAudio(); if(masterGain.gain.value>0.01){ masterGain.gain.value=0.001; document.getElementById('toggleSound').innerText='Enable Sound'; } else { masterGain.gain.value=0.06; document.getElementById('toggleSound').innerText='Disable Sound'; } };
+
+/* Attic button */
+document.getElementById('searchAtticBtn').onclick = ()=>{ if(state.sound) clickSFX(); searchAttic(); renderAll(); };
+document.getElementById('restBtn').onclick = ()=>{ if(state.sound) clickSFX(); restAction(); renderAll(); };
+
+/* Utilities for names */
+function emojiForName(n){ if(n==='David') return '👨‍💻'; if(n==='Chris') return '🩺'; if(n==='Tamara') return '👩‍⚕️'; if(n==='Raul') return '👷'; return '🙂'; }
+
+/* helper for random alive name */
+function randomAliveName(){ const arr = Object.entries(state.family).filter(([n,p])=>p.alive).map(a=>a[0]); return arr[rand(arr.length)]; }
+
+/* show long descriptions for deaths and events when they happen (non-graphic) */
+function detailedDeathDescription(name, cause){
+  const base = `${name} ${cause}. The family experiences deep despair but tries to press on.`;
+  return base;
+}
+
+/* small helper for escaped html */
+
+/* Start */
+renderAll(); startGame();
+</script>
+</body>
+</html>
