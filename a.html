@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gift for Chris</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Georgia", serif;
+      background: black;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
+    .slide {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .slide img {
+      max-width: 80%;
+      max-height: 60vh;
+      margin: 20px 0;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(255,255,255,0.6);
+    }
+    .active {
+      display: flex;
+    }
+    #ticket {
+      font-size: 2em;
+      color: gold;
+      margin-top: 20px;
+      animation: glow 2s infinite alternate;
+    }
+    @keyframes glow {
+      from { text-shadow: 0 0 10px gold; }
+      to { text-shadow: 0 0 25px orange, 0 0 40px yellow; }
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: gold;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="slide active">
+    <h1>Hello Chris, what are you going to do today?</h1>
+  </div>
+
+  <div class="slide">
+    <h1>🎮 Gaming?</h1>
+    <img src="gaming.jpeg" alt="Gaming">
+  </div>
+
+  <div class="slide">
+    <h1>📺 Watch TV?</h1>
+    <img src="Unknown-10.jpeg" alt="Watching TV">
+  </div>
+
+  <div class="slide">
+    <h1>💪 Or go to the gym, and just be siiiiick?!</h1>
+    <img src="Unknown-1.jpeg" alt="Gym Inspiration">
+    <img src="gym.jpeg" alt="Working Out">
+  </div>
+
+  <div class="slide">
+    <h1>It's not just about the gym, brah...</h1>
+    <img src="rah.jpeg" alt="Funny Gym Meme">
+  </div>
+
+  <!-- Final Ticket Surprise -->
+  <div class="slide">
+    <h1 id="ticket">🎟️ SURPRISE: YOUR TICKET IS REVEALED! 🎉</h1>
+    <p>Enjoy this gift, Chris! ❤️</p>
+  </div>
+
+  <button onclick="nextSlide()">Next ➡️</button>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const button = document.querySelector("button");
+
+    function nextSlide() {
+      slides[currentSlide].classList.remove('active');
+      currentSlide++;
+      if (currentSlide < slides.length) {
+        slides[currentSlide].classList.add('active');
+      }
+      // hide button at the last slide
+      if (currentSlide === slides.length - 1) {
+        button.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>
