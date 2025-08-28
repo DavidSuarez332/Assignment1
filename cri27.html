@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Happy 27th Birthday Cri — v2</title>
+<style>
+  /* ---------------- THEME: Dark night with clouds ---------------- */
+  :root{
+    --bg-dark: #0b1220;     /* deep night */
+    --cloud: #1c2430;       /* darker cloud band */
+    --accent-olive: #4d5f3b; /* muted army accent */
+    --accent-gold: #d4a017;
+    --muted-light: #aab2b9;
+    --panel: rgba(255,255,255,0.03);
+    --glass: rgba(255,255,255,0.02);
+  }
+  * { box-sizing: border-box; }
+  html,body{ height:100%; margin:0; font-family: "Trebuchet MS", Georgia, serif; background: radial-gradient(ellipse at top, #0b1220 0%, #050610 70%); color:#e9eef3; overflow:hidden; }
+  /* background clouds */
+  .night-sky {
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse at 10% 10%, rgba(255,255,255,0.02), transparent 8%),
+      radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.01), transparent 10%),
+      linear-gradient(180deg, rgba(5,6,10,0.8), rgba(2,4,10,0.9));
+  }
+  .cloud-layer {
+    position:fixed; left:-30%; top:6%; width:160%; height:28vh; z-index:1; opacity:0.92;
+    background: repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 6px, transparent 6px 12px);
+    filter: blur(12px) saturate(80%); mix-blend-mode: screen;
+    animation: cloudsMove 60s linear infinite;
+  }
+  @keyframes cloudsMove { 0% { transform: translateX(-8%);} 100%{ transform: translateX(8%);} }
+
+  /* moon / subtle stars */
+  .stars { position:fixed; inset:0; z-index:0; background-image: radial-gradient(circle, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 40px 40px; opacity:0.6; pointer-events:none; }
+
+  /* app container */
+  .app { position:relative; z-index:2; height:100vh; display:flex; align-items:center; justify-content:center; perspective:1400px; padding:20px; }
+
+  /* main card */
+  .card {
+    width:94vw; max-width:1300px; height:86vh; border-radius:14px; border: 1px solid rgba(255,255,255,0.03);
+    background: linear-gradient(180deg, rgba(10,16,24,0.6), rgba(8,10,12,0.85));
+    box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+    display:grid; grid-template-columns: 420px 1fr; gap:18px; overflow:hidden;
+    backdrop-filter: blur(6px) saturate(140%); transform-style: preserve-3d;
+  }
+
+  /* left pane: questions */
+  .left {
+    padding:18px; overflow:auto; border-right:1px solid rgba(255,255,255,0.02);
+  }
+  .logo {
+    display:flex; gap:12px; align-items:center; margin-bottom:12px;
+  }
+  .logo .badge { width:64px; height:64px; border-radius:10px; background: linear-gradient(180deg,#24311f,#33482b); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:20px; color:#fbf6e6; border:2px solid rgba(255,255,255,0.04); box-shadow:0 6px 18px rgba(0,0,0,0.6); }
+  .logo h1 { margin:0; font-size:1.3rem; color:#f6f6f6; letter-spacing:0.6px }
+  .subtitle { color:var(--muted-light); font-size:0.87rem; margin-top:4px }
+
+  .question { margin:14px 0; padding:12px; border-radius:10px; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00)); border:1px solid rgba(255,255,255,0.02); }
+  .question h3 { margin:0 0 8px 0; font-size:0.98rem; color:#f0f5f8; }
+  .options { display:flex; flex-direction:column; gap:8px }
+  .option { padding:10px; border-radius:8px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.02); cursor:pointer; display:flex; justify-content:space-between; align-items:center; color:#e9eef3 }
+  .option:hover{ transform:translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,0.6) }
+  .option.selected{ background: linear-gradient(180deg,#293822,#475a3a); border-color: rgba(212,160,23,0.12); box-shadow:0 16px 40px rgba(0,0,0,0.6); color:#fff; }
+
+  /* right pane: stage, games */
+  .right {
+    padding:20px; display:flex; flex-direction:column; gap:12px; overflow:auto;
+  }
+  .stage {
+    flex:1; padding:18px; border-radius:12px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.02);
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:12px; position:relative;
+  }
+  .stage h2 { margin:0; color:#fbf6e6 }
+  .stage p { color:var(--muted-light); max-width:88%; text-align:center; }
+
+  .controls { display:flex; gap:10px; align-items:center; margin-top:6px; flex-wrap:wrap; justify-content:center }
+  .emoji-btn { font-size:20px; padding:10px 12px; background:linear-gradient(180deg,#2f4b2f,#1f3520); color:#fff; border-radius:10px; border:1px solid rgba(255,255,255,0.03); cursor:pointer }
+  .emoji-btn:active{ transform:scale(0.98) }
+
+  .map {
+    width:160px; height:160px; border-radius:10px; background: linear-gradient(180deg,#11161a,#0e1416); border:1px solid rgba(255,255,255,0.03);
+    transform: rotateX(10deg) rotateY(-12deg) translateZ(20px); display:flex; align-items:center; justify-content:center; color:var(--muted-light);
+    box-shadow:0 20px 42px rgba(0,0,0,0.6);
+  }
+
+  .ticket { display:none; margin-top:8px; padding:12px; border-radius:10px; background: linear-gradient(180deg,#121212,#161616); color:#f7f2d0; border:1px dashed rgba(212,160,23,0.12); font-weight:700 }
+
+  .result-area { width:100%; display:flex; gap:12px; flex-direction:column; align-items:stretch; }
+
+  /* modals (game UIs) */
+  .modal { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:720px; max-width:96vw; z-index:999; background: linear-gradient(180deg,#07090b,#101214); color:#f7f7f7; padding:18px; border-radius:12px; border:1px solid rgba(255,255,255,0.04); display:none; box-shadow:0 40px 80px rgba(0,0,0,0.7) }
+  .modal h3{ margin:0 0 12px 0 }
+  .btn { padding:8px 12px; border-radius:10px; border:none; cursor:pointer; background:linear-gradient(180deg,#d4a017,#b88410); color:#0a0a0a; font-weight:800 }
+  .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); color:#fff }
+
+  /* blackjack & other card visuals */
+  .cards-row{ display:flex; gap:10px; align-items:center; }
+  .card-visual { width:72px; height:104px; border-radius:10px; background:#fff; color:#000; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; box-shadow:0 12px 36px rgba(0,0,0,0.6) }
+
+  /* small roulette wheel */
+  .roulette { width:300px; height:300px; border-radius:50%; background: conic-gradient(#9b1d1d 0 15deg, #222 15deg 30deg, #9b1d1d 30deg 45deg, #222 45deg 60deg, #9b1d1d 60deg 75deg, #222 75deg 90deg, #9b1d1d 90deg 105deg, #222 105deg 120deg, #9b1d1d 120deg 135deg, #222 135deg 150deg, #9b1d1d 150deg 165deg, #222 165deg 180deg, #9b1d1d 180deg 195deg, #222 195deg 210deg, #9b1d1d 210deg 225deg, #222 225deg 240deg, #9b1d1d 240deg 255deg, #222 255deg 270deg, #9b1d1d 270deg 285deg, #222 285deg 300deg, #9b1d1d 300deg 315deg, #222 315deg 330deg, #9b1d1d 330deg 345deg, #222 345deg 360deg); display:flex; align-items:center; justify-content:center; position:relative; box-shadow:0 20px 60px rgba(0,0,0,0.8) }
+  .roulette .pointer { position:absolute; top:-18px; width:0; height:0; border-left:16px solid transparent; border-right:16px solid transparent; border-bottom:18px solid #ffd700; left:50%; transform:translateX(-50%); }
+  .roulette .spin-label { position:absolute; bottom:16px; color:#fff; font-weight:700; font-size:16px; text-shadow:0 6px 12px rgba(0,0,0,0.6) }
+
+  /* DnD demo box */
+  .dnd-board { width:100%; display:flex; gap:12px; align-items:flex-start; justify-content:center; flex-wrap:wrap }
+  .dnd-log { background: rgba(255,255,255,0.02); padding:8px; border-radius:8px; width:100%; max-height:220px; overflow:auto; color:var(--muted-light); border:1px solid rgba(255,255,255,0.02) }
+
+  /* celebration emojis */
+  .confetti { position:fixed; left:50%; top:20%; transform:translateX(-50%); z-index:9999; pointer-events:none; display:none; }
+  .confetti span { display:inline-block; font-size:28px; margin:6px; animation: pop 2400ms linear forwards; }
+  @keyframes pop { 0%{ transform:translateY(0) rotate(0) scale(0.8); opacity:1 } 100%{ transform:translateY(-260px) rotate(540deg) scale(1.2); opacity:0 } }
+
+  /* responsive */
+  @media(max-width:980px){ .card{ grid-template-columns: 1fr; height:94vh } .left{ max-height:42vh; overflow:auto } .map{ display:none } .modal{ width:95vw } .roulette{ width:84vw; height:84vw } }
+</style>
+</head>
+<body>
+  <div class="night-sky"></div>
+  <div class="cloud-layer" aria-hidden="true"></div>
+  <div class="stars" aria-hidden="true"></div>
+
+  <div class="app" role="application" aria-label="Happy 27th Birthday Cri App">
+    <div class="card" role="region" aria-label="Birthday quiz and mini games">
+      <!-- LEFT: QUESTIONS -->
+      <aside class="left" id="leftPanel">
+        <div class="logo">
+          <div class="badge">27</div>
+          <div>
+            <h1>Happy 27th Birthday Cri</h1>
+            <div class="subtitle">A deep & playful quiz — answer honestly to find a tailored plan for the night.</div>
+          </div>
+        </div>
+
+        <div id="questionsContainer" aria-live="polite"></div>
+
+        <div style="margin-top:10px" class="muted-small">Tip: Toggle bold choices for a louder recommendation. Final questions trigger surprises and celebration.</div>
+      </aside>
+
+      <!-- RIGHT: STAGE AND MINIGAMES -->
+      <main class="right" id="rightPanel">
+        <div class="stage" id="stage">
+          <h2 id="stageTitle">Welcome, Cri</h2>
+          <p id="stageText">The quiz explores adventure, energy, social intensity, and personal taste. Use the emojis below to play side games and get philosophy pops.</p>
+
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:6px">
+            <div class="map" id="smallMap" title="Tiny 3D Map">Mini Map<br/>(very small)</div>
+            <div>
+              <div class="controls" role="toolbar" aria-label="mini game controls">
+                <button class="emoji-btn" id="pearBtn" title="Philosophy / Motivation">🍐</button>
+                <button class="emoji-btn" id="spadeBtn" title="Blackjack & secret">♠</button>
+                <button class="emoji-btn" id="dragonBtn" title="Dungeons & Dragons demo">🐉</button>
+                <button class="emoji-btn" id="rouletteBtn" title="Roulette mini-game">🎡</button>
+                <button class="emoji-btn" id="revealBtn" title="Reveal ticket (after quiz)">🎟</button>
+              </div>
+              <div style="margin-top:8px">
+                <div class="muted-small">🍐 wisdom • ♠ blackjack & secret • 🐉 DnD demo • 🎡 roulette • 🎟 reveal</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="philosophyBox" style="margin-top:10px;min-height:30px;color:var(--muted-light);text-align:center"></div>
+
+          <div id="resultArea" class="result-area"></div>
+
+          <div class="ticket" id="ticketBox" role="status" aria-live="polite">
+            <div id="ticketText">You earned a special ticket — details revealed below.</div>
+            <!-- intentionally no link (deleted as requested) -->
+          </div>
+
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="small-footer">Crafted for Cri • explore, play, and celebrate responsibly</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- CONFETTI -->
+  <div class="confetti" id="confetti"></div>
+
+  <!-- BLACKJACK MODAL -->
+  <div class="modal" id="blackjackModal" role="dialog" aria-modal="true" aria-label="Blackjack mini game">
+    <h3>♠ Blackjack — Mini Game</h3>
+    <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1">
+        <div style="color:#cfcfcf;font-size:0.9rem">Dealer</div>
+        <div id="dealerCards" class="cards-row" style="margin-top:8px"></div>
+      </div>
+      <div style="flex:1">
+        <div style="color:#cfcfcf;font-size:0.9rem">Player</div>
+        <div id="playerCards" class="cards-row" style="margin-top:8px"></div>
+      </div>
+      <div style="min-width:160px">
+        <div>Dealer: <span id="dealerScore">0</span></div>
+        <div>Player: <span id="playerScore">0</span></div>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+          <button id="hitBtn" class="btn">Hit</button>
+          <button id="standBtn" class="btn">Stand</button>
+          <button id="closeBJ" class="btn ghost">Close</button>
+        </div>
+      </div>
+    </div>
+    <div id="bjMsg" style="margin-top:12px;color:#ffd;"></div>
+  </div>
+
+  <!-- DnD Demo Modal -->
+  <div class="modal" id="dndModal" role="dialog" aria-modal="true" aria-label="Dungeons & Dragons demo">
+    <h3>🐉 DnD Encounter Demo</h3>
+    <div class="dnd-board">
+      <div style="flex:1;min-width:220px">
+        <div style="font-weight:700;margin-bottom:8px">Your Party</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="background:#121212;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04)">Fighter (Lvl 5)</div>
+          <div style="background:#121212;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04)">Rogue (Lvl 4)</div>
+          <div style="background:#121212;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04)">Cleric (Lvl 4)</div>
+        </div>
+        <div style="margin-top:10px">
+          <button id="rollAttack" class="btn">Roll Attack (d20)</button>
+          <button id="rollDamage" class="btn ghost">Roll Damage</button>
+        </div>
+      </div>
+      <div style="flex:1;min-width:240px">
+        <div style="font-weight:700;margin-bottom:8px">Encounter Log</div>
+        <div id="dndLog" class="dnd-log"></div>
+        <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end">
+          <button id="closeDnd" class="btn ghost">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROULETTE MODAL -->
+  <div class="modal" id="rouletteModal" role="dialog" aria-modal="true" aria-label="Roulette mini game">
+    <h3>🎡 Roulette — Spin the wheel</h3>
+    <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;justify-content:center">
+      <div id="rouletteWheel" class="roulette" style="transform:rotate(0deg);">
+        <div class="pointer" aria-hidden="true"></div>
+        <div class="spin-label">Spin</div>
+      </div>
+      <div style="min-width:220px">
+        <div style="margin-bottom:8px">Bet (demo):</div>
+        <select id="betSelect" style="padding:8px;border-radius:8px;background:#0f1315;color:#fff;border:none">
+          <option value="red">Red</option>
+          <option value="black">Black</option>
+          <option value="even">Even</option>
+          <option value="odd">Odd</option>
+        </select>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="spinBtn" class="btn">Spin</button>
+          <button id="closeRoulette" class="btn ghost">Close</button>
+        </div>
+        <div id="rouletteMsg" style="margin-top:12px;color:var(--muted-light)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIO (tiny) -->
+  <audio id="ding" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAAAB3AQACABAAZGF0YQAAAAA="></audio>
+  <audio id="revealSound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAAAB3AQACABAAZGF0YQAAAAA="></audio>
+
+<script>
+/* ================= MASSIVE APP SCRIPT ================= */
+/*  - new: more questions, darker theme, clouds
+    - dragon (DnD demo), roulette mini-game
+    - spade reveals secret message ("Side Quest Unlocked!: Hard Rock Casino")
+    - ticket emoji hidden, link removed
+    - celebration confetti when final question answered
+*/
+
+/* ---------- QUESTIONS: expanded and subtler ---------- */
+const questions = [
+  {id:'q1', text:'happy birthday twin', options:[
+    {id:'a1', text:'thanks twin', score:3},
+    {id:'a2', text:'thank you bro', score:2},
+    {id:'a3', text:'Im 27 and salty about it', score:0}
+  ]},
+  {id:'q2', text:'When you seek adrenaline, you prefer:', options:[
+    {id:'b1', text:'Running an offensive mission', score:3},
+    {id:'b2', text:'Seeing some crazy shit', score:2},
+    {id:'b3', text:'Put a curious finger where it doesnt belong', score:0}
+  ]},
+  {id:'q3', text:'Which aesthetic do you prefer for a night out?', options:[
+    {id:'c1', text:'Fully swagged out with gel in my hair and vaseline in my pocket', score:3},
+    {id:'c2', text:'mud aesthetic and smell horrible', score:1},
+    {id:'c3', text:'sad jerkin', score:0}
+  ]},
+  {id:'q4', text:'How much does being a siiik cunt matter to you?', options:[
+    {id:'d1', text:'Big time — peak physicality is inspiring', score:3},
+    {id:'d2', text:'Somewhat — respect it from afar', score:1},
+    {id:'d3', text:'Not a priority for me', score:0}
+  ]},
+  {id:'q5', text:'do you wanna chill?', options:[
+    {id:'e1', text:'yes but i have to take a shit first', score:3},
+    {id:'e2', text:'not rn', score:0},
+    {id:'e3', text:'Not really i wouldd rather be left alone and eat pizza and game bro', score:1}
+  ]},
+  {id:'q6', text:'Which night would you pick?', options:[
+    {id:'f1', text:'a sad night filled with crying and spitting', score:0},
+    {id:'f2', text:'a furry convention and develop a whooping cough', score:2},
+    {id:'f3', text:'spittin and screamin and hootin', score:3}
+  ]},
+  {id:'q7', text:'When with friends,I like to', options:[
+    {id:'g1', text:'Do something adventurous and be engaged', score:3},
+    {id:'g2', text:'Sing blissfully in the moonlight', score:2},
+    {id:'g3', text:'Be soft and a good boy', score:0}
+  ]},
+  {id:'q8', text:'How do you feel about meat', options:[
+    {id:'h1', text:'I love meat brah', score:3},
+    {id:'h2', text:'I’m curious but cautious', score:1},
+    {id:'h3', text:'I feel it', score:0}
+  ]},
+  /* additional subtler questions */
+  {id:'q9', text:'Is Panfilo a good boi', options:[
+    {id:'i1', text:'jessssss — obviously dood', score:3},
+    {id:'i2', text:'of course hes a good fat', score:1},
+    {id:'i3', text:'No', score:0}
+  ]},
+  {id:'q10', text:'wyd', options:[
+    {id:'j1', text:'This quiz to see what its about', score:3},
+    {id:'j2', text:'your mom', score:1},
+    {id:'j3', text:'nothing and i dont wanna do shit ever', score:0}
+  ]},
+  {id:'q11', text:'What the first thing they ask you in skyrim?', options:[
+    {id:'k1', text:'Heyah bud, get up', score:0},
+    {id:'k2', text:'Hey, you. Youve awoken', score:1},
+    {id:'k3', text:'Hey, you. Youre finally awake', score:2}
+  ]},
+  {id:'q12', text:'Whats the best zomb video game to you?', options:[
+    {id:'l1', text:'Left4Dead', score:3},
+    {id:'l2', text:'Walking Dead TTS', score:1},
+    {id:'l3', text:'Doom', score:0}
+  ]},
+  {id:'q13', text:'Spin the wheel?', options:[
+    {id:'m1', text:'Yes — Red', score:3},
+    {id:'m2', text:'Yes - Black', score:1},
+    {id:'m3', text:'No thanks.. no no, Green', score:0}
+  ]},
+  {id:'q14', text:'Dont ever talk about', options:[
+    {id:'n1', text:'the Dog Boy', score:3},
+    {id:'n2', text:'Cretin Jones', score:1},
+    {id:'n3', text:'my breath', score:0}
+  ]},
+  {id:'q15', text:'The nickname that fits me best is', options:[
+    {id:'o1', text:'Mi nino bello', score:1},
+    {id:'o2', text:'Pocholo', score:3},
+    {id:'o3', text:'Capitan Culo', score:0}
+]},
+  {id:'q16', text:'YO yo YO yo YO yo...', options:[
+    {id:'o1', text:'yo me estaba masturbaaaah', score:1},
+    {id:'o2', text:'me estaba masturbaaaahn', score:3},
+    {id:'o3', text:'todo el mundo me dice que tengo a dejar de mastubahhh', score:0}
+]},
+  {id:'q17', text:'do you want to do something for your birthday', options:[
+    {id:'o1', text:'eh', score:1},
+    {id:'o2', text:'ofc Yes!', score:3},
+    {id:'o3', text:'todo el mundo me dice que tengo a dejar de mastubahhh', score:0}
+    ]},
+  {id:'q18', text:'you scratched your ass...', options:[
+    {id:'o1', text:'sniff it', score:1},
+    {id:'o2', text:'flick your fingers as if you are getting the fart off your fingers', score:3},
+    {id:'o3', text:'wash my hands', score:0}
+    ]},
+  {id:'q19', text:'Alex Jones is:', options:[
+    {id:'o1', text:'Right', score:1},
+    {id:'o2', text:'a part of the homosexual frog lizard people', score:3},
+    {id:'o3', text:'a great person and a globolist', score:0}
+    ]},
+  {id:'q20', text:'Do you want to see some fights on Oct.10', options:[
+    {id:'o1', text:'gotta check my schedule', score:0},
+    {id:'o2', text:'i mean yeah', score:1},
+    {id:'o3', text:'hell yeh brether', score:3}    
+    
+  ]}
+];
+
+/* ---------- STATE ---------- */
+let answers = {}; // qId -> {opt,score}
+let totalScore = 0;
+
+/* ---------- DOMELEMENTS ---------- */
+const qContainer = document.getElementById('questionsContainer');
+const stageTitle = document.getElementById('stageTitle');
+const stageText = document.getElementById('stageText');
+const resultArea = document.getElementById('resultArea');
+const ticketBox = document.getElementById('ticketBox');
+const ticketTextEl = document.getElementById('ticketText');
+const philosophyBox = document.getElementById('philosophyBox');
+
+const pearBtn = document.getElementById('pearBtn');
+const spadeBtn = document.getElementById('spadeBtn');
+const dragonBtn = document.getElementById('dragonBtn');
+const rouletteBtn = document.getElementById('rouletteBtn');
+const revealBtn = document.getElementById('revealBtn');
+
+const ding = document.getElementById('ding');
+const revealSound = document.getElementById('revealSound');
+
+/* ---------- BUILD QUESTIONS UI (massive) ---------- */
+function buildQuestions(){
+  qContainer.innerHTML = '';
+  questions.forEach((q, idx) => {
+    const qDiv = document.createElement('div');
+    qDiv.className = 'question';
+    qDiv.id = q.id;
+    const h = document.createElement('h3');
+    h.innerText = `${idx+1}. ${q.text}`;
+    qDiv.appendChild(h);
+
+    const opts = document.createElement('div');
+    opts.className = 'options';
+    q.options.forEach(opt=>{
+      const b = document.createElement('button');
+      b.className = 'option';
+      b.setAttribute('data-q', q.id);
+      b.setAttribute('data-opt', opt.id);
+      b.setAttribute('data-score', opt.score);
+      b.innerHTML = `<span>${opt.text}</span><span style="opacity:0.6">+${opt.score}</span>`;
+      b.addEventListener('click', onOptionClick);
+      opts.appendChild(b);
+    });
+    qDiv.appendChild(opts);
+    qContainer.appendChild(qDiv);
+  });
+
+  // final submission big button at end
+  const submitDiv = document.createElement('div');
+  submitDiv.style.marginTop = '18px';
+  submitDiv.style.display = 'flex';
+  submitDiv.style.justifyContent = 'center';
+  const submitBtn = document.createElement('button');
+  submitBtn.textContent = 'Complete Quiz & Reveal Recommendation';
+  submitBtn.className = 'btn';
+  submitBtn.addEventListener('click', finalizeQuiz);
+  submitDiv.appendChild(submitBtn);
+  qContainer.appendChild(submitDiv);
+}
+
+/* ---------- OPTION CLICK ---------- */
+function onOptionClick(e){
+  const btn = e.currentTarget;
+  const qid = btn.getAttribute('data-q');
+  const optid = btn.getAttribute('data-opt');
+  const score = Number(btn.getAttribute('data-score') || 0);
+
+  answers[qid] = {opt: optid, score};
+  playDing();
+
+  // style selection
+  const parent = btn.parentElement;
+  Array.from(parent.children).forEach(c=> c.classList.remove('selected'));
+  btn.classList.add('selected');
+
+  stageTitle.innerText = 'Answer recorded';
+  stageText.innerText = 'Keep going — your choices shape the final suggestion.';
+}
+
+/* ---------- FINALIZE QUIZ ---------- */
+function finalizeQuiz(){
+  // optional confirm if many unanswered
+  const missing = questions.filter(q=>!answers[q.id]);
+  if(missing.length > 0){
+    if(!confirm(`You skipped ${missing.length} question(s). Continue to results?`)) return;
+  }
+
+  totalScore = Object.values(answers).reduce((s,a)=> s + (a.score || 0), 0);
+
+  // interpret
+  const rec = analyzeAnswers(totalScore);
+  // show recommendation
+  resultArea.innerHTML = `<div style="padding:12px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.02)">
+    <strong style="display:block;margin-bottom:8px">Personal Recommendation</strong>
+    <div style="color:var(--muted-light)">${rec}</div>
+  </div>`;
+
+  // show ticket text if high enough (no link)
+  if(totalScore >= 0){ // higher threshold since many questions
+    ticketBox.style.display = 'block';
+    ticketTextEl.innerText = 'Congrats —  RAHHHHH WE GOING TO SEE A SCRAP ON ICE RAHHHHH. Happy birthday twin i fot wit you an we seeing mongolismo on ice fr. we run that oct.10';
+    triggerCelebration();
+    playReveal();
+    stageTitle.innerText = 'Result: Go experience the night';
+    stageText.innerText = 'Happy birthday twin i fot wit you an we seeing mongolismo on ice fr.';
+  } else if(totalScore >= 18){
+    ticketBox.style.display = 'block';
+    ticketTextEl.innerText = 'We gonna watch some mud battles on ice twizzy';
+    playDing();
+    stageTitle.innerText = 'Result: Consider the outing';
+    stageText.innerText = 'a lively event could be rewarding.so thats what we doing. we going to see a scrap foe';
+  } else {
+    ticketBox.style.display = 'none';
+    stageTitle.innerText = 'Result: Run the quiz back';
+    stageText.innerText = 'No results means you got no results twin whatchu want me to do?';
+  }
+
+  // breakdown
+  showBreakdown();
+
+  // celebration emojis always once final question answered (your request)
+  spawnEmojis(['🎉','🍻','💪','🔥','🍗','🏆','🤘']);
+}
+
+/* ---------- ANALYZE ---------- */
+function analyzeAnswers(score){
+  if(score >= 36) return "You're full-on adventure & spectacle: big crowds, primal energy, and live intensity excite you. A live, regulated spectacle with strong crowd energy suits you best.";
+  if(score >= 30) return "High intensity fits: you'll likely love a dynamic, live experience that thrives on crowd atmosphere and sensory energy.";
+  if(score >= 24) return "Moderately inclined to live, social, and athletic events — bring some friends and go for the atmosphere.";
+  if(score >= 18) return "You're curious about energetic events but may prefer to go with a group. A lively evening could be fun.";
+  return "You seem to prefer more intimate or controlled entertainment — game nights, focused sport-watching or curated social gatherings.";
+}
+
+/* ---------- BREAKDOWN ---------- */
+function showBreakdown(){
+  const breakdown = document.createElement('details');
+  breakdown.style.marginTop = '12px';
+  breakdown.style.padding = '10px';
+  breakdown.style.borderRadius = '8px';
+  breakdown.style.background = 'rgba(255,255,255,0.01)';
+  breakdown.style.border = '1px solid rgba(255,255,255,0.02)';
+  breakdown.innerHTML = `<summary style="font-weight:700">Your Answers & Score (click)</summary>`;
+  const inner = document.createElement('div');
+  inner.style.marginTop = '8px';
+  inner.innerHTML = questions.map(q=>{
+    const a = answers[q.id];
+    const chosen = q.options.find(o=>o.id === (a && a.opt));
+    return `<div style="padding:6px 0"><strong>${escapeHtml(q.text)}</strong><br/><em>${chosen?escapeHtml(chosen.text):'<span style="color:#777">No answer</span>'}</em></div>`;
+  }).join('') + `<div style="margin-top:8px"><strong>Total score:</strong> ${totalScore}</div>`;
+  breakdown.appendChild(inner);
+  resultArea.appendChild(breakdown);
+}
+
+/* ---------- HELPERS ---------- */
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+function playDing(){ try{ ding.currentTime = 0; ding.play(); }catch(e){} }
+function playReveal(){ try{ revealSound.currentTime=0; revealSound.play(); }catch(e){} }
+
+/* ---------- PHILOSOPHY (PEAR) ---------- */
+const pearQuotes = [
+  "Mastery is forged by patient repetition; strength is the byproduct.",
+  "Bravery is not the absence of fear, but the decision to act with purpose in spite of it.",
+  "A quiet, disciplined day compounds into loud, undeniable results.",
+  "Power is a tool; character is how you wield it.",
+  "Find the thing that makes you proud in the morning and persistent at night."
+];
+pearBtn.addEventListener('click', ()=>{
+  const q = pearQuotes[Math.floor(Math.random()*pearQuotes.length)];
+  philosophyBox.innerText = q;
+  playDing();
+});
+
+/* ---------- SPADE (BLACKJACK + SECRET MESSAGE) ---------- */
+const blackjackModal = document.getElementById('blackjackModal');
+const dealerCards = document.getElementById('dealerCards');
+const playerCards = document.getElementById('playerCards');
+const dealerScoreEl = document.getElementById('dealerScore');
+const playerScoreEl = document.getElementById('playerScore');
+const hitBtn = document.getElementById('hitBtn');
+const standBtn = document.getElementById('standBtn');
+const closeBJ = document.getElementById('closeBJ');
+const bjMsg = document.getElementById('bjMsg');
+
+let deck = [], playerHand = [], dealerHand = [], inGame = false;
+
+spadeBtn.addEventListener('click', ()=>{
+  // open blackjack
+  openBlackjack();
+  // reveal secret message after short delay
+  setTimeout(()=> {
+    const secret = document.createElement('div');
+    secret.style.marginTop = '8px';
+    secret.style.padding = '10px';
+    secret.style.borderRadius = '8px';
+    secret.style.background = 'linear-gradient(180deg,#14221a,#0f1710)';
+    secret.style.border = '1px solid rgba(255,255,255,0.03)';
+    secret.innerHTML = `<strong>Side Quest Unlocked!:</strong> Hard Rock Casino`;
+    resultArea.prepend(secret);
+  }, 250);
+});
+
+closeBJ.addEventListener('click', ()=> closeBlackjack());
+
+function openBlackjack(){
+  resetDeck(); shuffleDeck();
+  playerHand=[]; dealerHand=[]; inGame=true; bjMsg.innerText='';
+  // initial
+  playerHand.push(drawCard()); dealerHand.push(drawCard());
+  playerHand.push(drawCard()); dealerHand.push(drawCard());
+  renderHands();
+  blackjackModal.style.display = 'block';
+}
+function closeBlackjack(){ blackjackModal.style.display = 'none'; inGame=false; }
+function resetDeck(){ deck = []; const suits = ['♠','♥','♦','♣']; const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K']; suits.forEach(s => ranks.forEach(r => deck.push({suit:s,rank:r}))); }
+function shuffleDeck(){ for(let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; } }
+function drawCard(){ return deck.shift(); }
+function handValue(hand){ let sum=0, aces=0; hand.forEach(c=>{ if(c.rank==='A'){ aces++; sum+=11; } else if(['J','Q','K'].includes(c.rank)){ sum+=10 } else sum+=Number(c.rank); }); while(sum>21 && aces>0){ sum-=10; aces--; } return sum; }
+function renderHands(){ dealerCards.innerHTML=''; playerCards.innerHTML=''; dealerHand.forEach(c=>{ const el=document.createElement('div'); el.className='card-visual'; el.innerText = `${c.rank}${c.suit}`; dealerCards.appendChild(el); }); playerHand.forEach(c=>{ const el=document.createElement('div'); el.className='card-visual'; el.innerText = `${c.rank}${c.suit}`; playerCards.appendChild(el); }); dealerScoreEl.innerText = handValue(dealerHand); playerScoreEl.innerText = handValue(playerHand); }
+hitBtn.addEventListener('click', ()=>{ if(!inGame) return; playerHand.push(drawCard()); renderHands(); const pv = handValue(playerHand); if(pv>21){ bjMsg.innerText='Bust! You lose.'; inGame=false; } });
+standBtn.addEventListener('click', ()=>{ if(!inGame) return; while(handValue(dealerHand) < 17) dealerHand.push(drawCard()); renderHands(); const dv=handValue(dealerHand), pv=handValue(playerHand); let msg=''; if(pv>21) msg='You busted!'; else if(dv>21) msg='Dealer busted — You win!'; else if(pv>dv) msg='You win!'; else if(pv===dv) msg='Push (tie).'; else msg='Dealer wins!'; bjMsg.innerText = msg; inGame=false; if(msg.includes('win')) { const n = document.createElement('div'); n.style.marginTop='8px'; n.style.background='#101814'; n.style.padding='8px'; n.style.borderRadius='6px'; n.innerHTML = '<strong>Blackjack Bonus:</strong> You found a lead — Hard Rock Casino added to your quest map!'; resultArea.prepend(n); } });
+
+/* ---------- ROULETTE mini-game ---------- */
+const rouletteModal = document.getElementById('rouletteModal');
+const rouletteWheel = document.getElementById('rouletteWheel');
+const spinBtn = document.getElementById('spinBtn');
+const closeRoulette = document.getElementById('closeRoulette');
+const rouletteMsg = document.getElementById('rouletteMsg');
+
+rouletteBtn.addEventListener('click', ()=> {
+  rouletteModal.style.display = 'block';
+  playDing();
+});
+closeRoulette.addEventListener('click', ()=> rouletteModal.style.display='none');
+
+spinBtn.addEventListener('click', ()=> {
+  spinBtn.disabled = true;
+  rouletteMsg.innerText = 'Spinning...';
+  // random spin: 360 * n + random
+  const spins = Math.floor(Math.random() * 6) + 4;
+  const extra = Math.floor(Math.random() * 360);
+  const total = spins * 360 + extra;
+  rouletteWheel.style.transition = 'transform 4.2s cubic-bezier(.2,.8,.2,1)';
+  rouletteWheel.style.transform = `rotate(${total}deg)`;
+  setTimeout(()=>{
+    rouletteWheel.style.transition = '';
+    rouletteWheel.style.transform = `rotate(${extra}deg)`; // normalize
+    // determine "result" by sector (24 sectors, each 15 degrees)
+    const sector = Math.floor(((360 - (extra % 360)) % 360) / 15); // 0..23
+    const color = (sector % 2 === 0) ? 'red' : 'black';
+    const number = sector + 1; // demo number
+    rouletteMsg.innerText = `Result: ${number} (${color}).`;
+    // short reward message
+    if(color === 'red') {
+      const note = document.createElement('div'); note.style.marginTop='8px'; note.style.padding='8px'; note.style.borderRadius='8px'; note.style.background='#101814'; note.innerHTML = `<strong>Lucky red:</strong> You found a small clue on the quest map!`; resultArea.prepend(note);
+    }
+    spinBtn.disabled = false;
+  }, 4300);
+});
+
+/* ---------- DnD DEMO ---------- */
+const dndModal = document.getElementById('dndModal');
+const dndLog = document.getElementById('dndLog');
+
+dragonBtn.addEventListener('click', ()=> {
+  dndModal.style.display = 'block';
+  dndLog.innerHTML = '';
+  logDnD('A small cave troll blocks the path. The party prepares to roll for initiative...');
+});
+
+document.getElementById('closeDnd').addEventListener('click', ()=> dndModal.style.display='none');
+
+document.getElementById('rollAttack').addEventListener('click', ()=> {
+  const roll = rollDie(20);
+  logDnD(`You roll d20 for attack: <strong>${roll}</strong>. ${roll >= 12 ? 'Hit!' : 'Miss.'}`);
+});
+document.getElementById('rollDamage').addEventListener('click', ()=> {
+  const dmg = rollDie(8);
+  logDnD(`Damage roll: <strong>${dmg}</strong>. The troll staggers.`);
+});
+
+function logDnD(html){
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  dndLog.prepend(el);
+}
+function rollDie(sides){ return Math.floor(Math.random()*sides)+1; }
+
+/* ---------- SMALL MAP (tiny 3D) ---------- */
+const smallMap = document.getElementById('smallMap');
+function renderMap(){
+  smallMap.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = 'repeat(5,1fr)';
+  grid.style.gridGap = '6px';
+  grid.style.width = '120px';
+  for(let i=0;i<25;i++){
+    const cell = document.createElement('div');
+    cell.style.background = (i===12) ? 'linear-gradient(180deg,#3b4f2f,#26321f)' : 'linear-gradient(180deg,#0b0f10,#0d1212)';
+    cell.style.borderRadius = '6px';
+    cell.style.height = '18px';
+    cell.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.02)';
+    if(i===12){
+      cell.style.display='flex'; cell.style.alignItems='center'; cell.style.justifyContent='center';
+      cell.innerHTML = '<small style="font-weight:700;color:#f6f6f6">You</small>';
+    }
+    grid.appendChild(cell);
+  }
+  smallMap.appendChild(grid);
+}
+renderMap();
+
+/* ---------- CONFETTI EMOJIS ---------- */
+const confetti = document.getElementById('confetti');
+function spawnEmojis(list){
+  confetti.innerHTML = '';
+  confetti.style.display = 'block';
+  list.forEach((e,i)=> {
+    const s = document.createElement('span');
+    s.innerText = e;
+    s.style.animationDelay = (i*120)+'ms';
+    confetti.appendChild(s);
+  });
+  // hide after time
+  setTimeout(()=>{ confetti.style.display='none'; confetti.innerHTML=''; }, 2600);
+}
+
+/* ---------- REVEAL button logic (ticket text only, no link) ---------- */
+revealBtn.addEventListener('click', ()=>{
+  // show ticket text but no link
+  ticketBox.style.display = 'block';
+  if(totalScore >= 30){
+    ticketTextEl.innerText = 'Special ticket reserved — the birthday surprise awaits you on the selected date.';
+    triggerCelebration();
+    playReveal();
+  } else {
+    ticketTextEl.innerText = 'You can consider attending a lively event — details are a private surprise.';
+    playDing();
+  }
+});
+
+/* ---------- CELEBRATION helper ---------- */
+function triggerCelebration(){
+  spawnEmojis(['🎉','🔥','🍺','🍗','💪','🏆','🤘','🎊','🎈','🎵','🥳']);
+  // small visual in result area
+  const el = document.createElement('div');
+  el.style.marginTop='8px';
+  el.style.padding='10px';
+  el.style.borderRadius='8px';
+  el.style.background = 'linear-gradient(180deg,#14221a,#08120c)';
+  el.style.color = '#f7f2d0';
+  el.innerHTML = '<strong>Celebration!</strong> 🎉 Your result triggered a birthday surprise.';
+  resultArea.prepend(el);
+}
+
+/* ---------- LOCAL STORAGE persistence ---------- */
+setInterval(()=>{ localStorage.setItem('cri_quiz_answers_v2', JSON.stringify(answers)); }, 5000);
+(function restore(){
+  const raw = localStorage.getItem('cri_quiz_answers_v2');
+  if(!raw) return;
+  try{
+    const old = JSON.parse(raw);
+    if(typeof old === 'object'){
+      answers = old;
+      Object.entries(answers).forEach(([qid,val])=>{
+        const qel = document.getElementById(qid);
+        if(!qel) return;
+        const opt = qel.querySelector(`[data-opt="${val.opt}"]`);
+        if(opt) opt.classList.add('selected');
+      });
+    }
+  }catch(e){}
+})();
+
+/* ---------- INITIALIZE UI ---------- */
+buildQuestions();
+
+/* ---------- SOUND helpers ---------- */
+function playDing(){ try{ ding.currentTime=0; ding.play(); }catch(e){} }
+function playReveal(){ try{ revealSound.currentTime=0; revealSound.play(); }catch(e){} }
+
+/* ---------- DEBUG exposure ---------- */
+window._cri = {answers, finalizeQuiz: () => { finalizeQuiz(); }, spawnEmojis, triggerCelebration};
+
+</script>
+</body>
+</html>
