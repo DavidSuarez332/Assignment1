@@ -132,7 +132,7 @@
           <div class="badge">27</div>
           <div>
             <h1>Happy 27th Birthday Cri</h1>
-            <div class="subtitle">A deep & playful quiz — answer honestly to find a tailored plan for the night.</div>
+            <div class="subtitle">love you brobro.</div>
           </div>
         </div>
 
@@ -155,10 +155,10 @@
                 <button class="emoji-btn" id="spadeBtn" title="Blackjack & secret">♠</button>
                 <button class="emoji-btn" id="dragonBtn" title="Dungeons & Dragons demo">🐉</button>
                 <button class="emoji-btn" id="rouletteBtn" title="Roulette mini-game">🎡</button>
-                <button class="emoji-btn" id="revealBtn" title="Reveal ticket (after quiz)">🎟</button>
+            
               </div>
               <div style="margin-top:8px">
-                <div class="muted-small">🍐 wisdom • ♠ blackjack & secret • 🐉 DnD demo • 🎡 roulette • 🎟 reveal</div>
+                <div class="muted-small">🍐 wisdom • ♠ blackjack • 🐉 DnD demo • 🎡 roulette •
               </div>
             </div>
           </div>
@@ -266,14 +266,11 @@
 
 <script>
 /* ================= MASSIVE APP SCRIPT ================= */
-/*  - new: more questions, darker theme, clouds
-    - dragon (DnD demo), roulette mini-game
-    - spade reveals secret message ("Side Quest Unlocked!: Hard Rock Casino")
-    - ticket emoji hidden, link removed
-    - celebration confetti when final question answered
+/*  - fixed syntax & logic errors from previous version
+    - retains your content and functionality
 */
 
-/* ---------- QUESTIONS: expanded and subtler ---------- */
+/* ---------- QUESTIONS: corrected and runnable ---------- */
 const questions = [
   {id:'q1', text:'happy birthday twin', options:[
     {id:'a1', text:'thanks twin', score:3},
@@ -315,7 +312,6 @@ const questions = [
     {id:'h2', text:'I’m curious but cautious', score:1},
     {id:'h3', text:'I feel it', score:0}
   ]},
-  /* additional subtler questions */
   {id:'q9', text:'Is Panfilo a good boi', options:[
     {id:'i1', text:'jessssss — obviously dood', score:3},
     {id:'i2', text:'of course hes a good fat', score:1},
@@ -350,32 +346,31 @@ const questions = [
     {id:'o1', text:'Mi nino bello', score:1},
     {id:'o2', text:'Pocholo', score:3},
     {id:'o3', text:'Capitan Culo', score:0}
-]},
+  ]},
   {id:'q16', text:'YO yo YO yo YO yo...', options:[
-    {id:'o1', text:'yo me estaba masturbaaaah', score:1},
-    {id:'o2', text:'me estaba masturbaaaahn', score:3},
-    {id:'o3', text:'todo el mundo me dice que tengo a dejar de mastubahhh', score:0}
-]},
+    {id:'p1', text:'yo me estaba masturbaaaah', score:1},
+    {id:'p2', text:'me estaba masturbaaaahn', score:3},
+    {id:'p3', text:'todo el mundo me dice que tengo a dejar de mastubahhh', score:0}
+  ]},
   {id:'q17', text:'do you want to do something for your birthday', options:[
-    {id:'o1', text:'eh', score:1},
-    {id:'o2', text:'ofc Yes!', score:3},
-    {id:'o3', text:'todo el mundo me dice que tengo a dejar de mastubahhh', score:0}
-    ]},
+    {id:'q1_opt', text:'eh', score:1},
+    {id:'q2_opt', text:'ofc Yes!', score:3},
+    {id:'q3_opt', text:'todo el mundo me dice que tengo a dejar de mastubahhh', score:0}
+  ]},
   {id:'q18', text:'you scratched your ass...', options:[
-    {id:'o1', text:'sniff it', score:1},
-    {id:'o2', text:'flick your fingers as if you are getting the fart off your fingers', score:3},
-    {id:'o3', text:'wash my hands', score:0}
-    ]},
+    {id:'r1', text:'sniff it', score:1},
+    {id:'r2', text:'flick your fingers as if you are getting the fart off your fingers', score:3},
+    {id:'r3', text:'wash my hands', score:0}
+  ]},
   {id:'q19', text:'Alex Jones is:', options:[
-    {id:'o1', text:'Right', score:1},
-    {id:'o2', text:'a part of the homosexual frog lizard people', score:3},
-    {id:'o3', text:'a great person and a globolist', score:0}
-    ]},
+    {id:'s1', text:'Right', score:1},
+    {id:'s2', text:'a part of the homosexual frog lizard people', score:3},
+    {id:'s3', text:'a great person and a globolist', score:0}
+  ]},
   {id:'q20', text:'Do you want to see some fights on Oct.10', options:[
-    {id:'o1', text:'gotta check my schedule', score:0},
-    {id:'o2', text:'i mean yeah', score:1},
-    {id:'o3', text:'hell yeh brether', score:3}    
-    
+    {id:'t1', text:'gotta check my schedule', score:0},
+    {id:'t2', text:'i mean yeah', score:1},
+    {id:'t3', text:'hell yeh brether', score:3}
   ]}
 ];
 
@@ -479,7 +474,7 @@ function finalizeQuiz(){
   </div>`;
 
   // show ticket text if high enough (no link)
-  if(totalScore >= 0){ // higher threshold since many questions
+  if(totalScore >= 30){
     ticketBox.style.display = 'block';
     ticketTextEl.innerText = 'Congrats —  RAHHHHH WE GOING TO SEE A SCRAP ON ICE RAHHHHH. Happy birthday twin i fot wit you an we seeing mongolismo on ice fr. we run that oct.10';
     triggerCelebration();
@@ -491,7 +486,7 @@ function finalizeQuiz(){
     ticketTextEl.innerText = 'We gonna watch some mud battles on ice twizzy';
     playDing();
     stageTitle.innerText = 'Result: Consider the outing';
-    stageText.innerText = 'a lively event could be rewarding.so thats what we doing. we going to see a scrap foe';
+    stageText.innerText = 'a lively event could be rewarding. so thats what we doing. we going to see a scrap foe';
   } else {
     ticketBox.style.display = 'none';
     stageTitle.innerText = 'Result: Run the quiz back';
@@ -501,17 +496,17 @@ function finalizeQuiz(){
   // breakdown
   showBreakdown();
 
-  // celebration emojis always once final question answered (your request)
+  // celebration emojis always once final question answered
   spawnEmojis(['🎉','🍻','💪','🔥','🍗','🏆','🤘']);
 }
 
 /* ---------- ANALYZE ---------- */
 function analyzeAnswers(score){
-  if(score >= 36) return "You're full-on adventure & spectacle: big crowds, primal energy, and live intensity excite you. A live, regulated spectacle with strong crowd energy suits you best.";
-  if(score >= 30) return "High intensity fits: you'll likely love a dynamic, live experience that thrives on crowd atmosphere and sensory energy.";
-  if(score >= 24) return "Moderately inclined to live, social, and athletic events — bring some friends and go for the atmosphere.";
-  if(score >= 18) return "You're curious about energetic events but may prefer to go with a group. A lively evening could be fun.";
-  return "You seem to prefer more intimate or controlled entertainment — game nights, focused sport-watching or curated social gatherings.";
+  if(score >= 36) return "Congrats —  RAHHHHH WE GOING TO SEE A SCRAP ON ICE RAHHHHH. Happy birthday twin i fot wit you an we seeing mongolismo on ice fr. we run that oct.10'";
+  if(score >= 30) return "Happy birthday twin i fot wit you an we seeing mongolismo on ice fr.";
+  if(score >= 24) return "We gonna watch some mud battles on ice twizzy.";
+  if(score >= 18) return "We gonna watch some mud battles on ice twizzy.";
+  return "do the quiz jit";
 }
 
 /* ---------- BREAKDOWN ---------- */
@@ -541,11 +536,11 @@ function playReveal(){ try{ revealSound.currentTime=0; revealSound.play(); }catc
 
 /* ---------- PHILOSOPHY (PEAR) ---------- */
 const pearQuotes = [
-  "Mastery is forged by patient repetition; strength is the byproduct.",
-  "Bravery is not the absence of fear, but the decision to act with purpose in spite of it.",
-  "A quiet, disciplined day compounds into loud, undeniable results.",
-  "Power is a tool; character is how you wield it.",
-  "Find the thing that makes you proud in the morning and persistent at night."
+  "you be ight",
+  "you be good twin.",
+  "aye mane",
+  "i see you and you see me and we see each other foet",
+  "you be gud"
 ];
 pearBtn.addEventListener('click', ()=>{
   const q = pearQuotes[Math.floor(Math.random()*pearQuotes.length)];
@@ -759,7 +754,7 @@ setInterval(()=>{ localStorage.setItem('cri_quiz_answers_v2', JSON.stringify(ans
 buildQuestions();
 
 /* ---------- SOUND helpers ---------- */
-function playDing(){ try{ ding.currentTime=0; ding.play(); }catch(e){} }
+function playDing(){ try{ ding.currentTime = 0; ding.play(); }catch(e){} }
 function playReveal(){ try{ revealSound.currentTime=0; revealSound.play(); }catch(e){} }
 
 /* ---------- DEBUG exposure ---------- */
