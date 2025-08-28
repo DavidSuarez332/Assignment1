@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Happy 27th Birthday Cri</title>
+<style>
+  /* ===== THEME & LAYOUT ===== */
+  :root{
+    --army:#536b40;
+    --army-dark:#405230;
+    --sand:#efe6cf;
+    --accent:#d4a017;
+    --white:#fffefc;
+    --muted:#ddd;
+    --glass: rgba(255,255,255,0.06);
+  }
+  html,body{height:100%;margin:0;font-family: "Trebuchet MS", Georgia, serif;background: linear-gradient(180deg,#e6eedf 0%, #dfe8d8 100%);color:#0b0b0b;overflow:hidden}
+  /* Full app container */
+  .app {
+    position:relative;
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    perspective:1200px; /* for 3D effect */
+  }
+
+  /* Army green background pattern */
+  .bg {
+    position:absolute;inset:0;background:
+      repeating-linear-gradient(45deg, rgba(67,107,64,0.06) 0 8px, rgba(67,107,64,0) 8px 16px),
+      radial-gradient(circle at 10% 10%, rgba(255,255,255,0.03), rgba(0,0,0,0.02));
+    z-index:0;
+  }
+
+  /* Flying eagle (simple animated SVG) */
+  .eagle {
+    position:fixed; top:8vh; left:-10vw; z-index:50; width:12vw; min-width:80px; opacity:0.95;
+    animation: eagleFly 18s linear infinite;
+    transform-origin:center;
+    pointer-events:none;
+    filter: drop-shadow(0 6px 6px rgba(0,0,0,0.35));
+  }
+  @keyframes eagleFly{
+    0%{left:-15vw; top:6vh; transform:scale(0.8) rotate(0deg); opacity:0.9}
+    25%{left:30vw; top:8vh; transform:scale(1.0) rotate(5deg); opacity:0.95}
+    50%{left:60vw; top:4vh; transform:scale(1.1) rotate(-5deg); opacity:1}
+    75%{left:90vw; top:10vh; transform:scale(0.95) rotate(3deg); opacity:0.95}
+    100%{left:110vw; top:8vh; transform:scale(0.85) rotate(0deg); opacity:0.9}
+  }
+
+  /* Card wrapper (3D-ish) */
+  .card {
+    position:relative; z-index:2; width:92vw; max-width:1100px; height:82vh; border-radius:14px;
+    background: linear-gradient(180deg,var(--sand), #fff);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.28);
+    display:grid; grid-template-columns: 360px 1fr; overflow:hidden;
+    transform-style: preserve-3d;
+    border: 6px solid var(--army-dark);
+  }
+
+  /* Left panel: questions */
+  .left {
+    padding:18px; background: linear-gradient(180deg, rgba(83,107,64,0.06), rgba(255,255,255,0.02));
+    border-right:4px solid rgba(83,107,64,0.06); overflow:auto;
+  }
+
+  .logo {
+    display:flex; gap:10px; align-items:center; margin-bottom:12px;
+  }
+  .logo h1 { margin:0; font-size:1.25rem; color:var(--army-dark) }
+  .subtitle { font-size:0.86rem; color:#333; opacity:0.8 }
+
+  .question { margin:12px 0; padding:12px; background:var(--glass); border-radius:10px; border:1px solid rgba(0,0,0,0.04) }
+  .question h3 { margin:0 0 6px 0; font-size:1rem; color:var(--army-dark) }
+  .options { display:flex; flex-direction:column; gap:8px }
+  .option { padding:8px; border-radius:8px; background:linear-gradient(180deg,#fff,#f6f6f6); border:1px solid rgba(0,0,0,0.06); cursor:pointer; display:flex; justify-content:space-between; align-items:center }
+  .option:hover{ transform:translateY(-3px); box-shadow:0 8px 18px rgba(0,0,0,0.08) }
+
+  .muted-small{ font-size:0.85rem; color:#333; opacity:0.7 }
+
+  /* Right panel: stage, map, mini games */
+  .right {
+    padding:20px; position:relative; overflow:auto;
+    display:flex; flex-direction:column; gap:12px;
+  }
+
+  .stage {
+    flex:1; background: linear-gradient(180deg,#fff,#f7f7f4); border-radius:10px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;
+    box-shadow: inset 0 4px 30px rgba(0,0,0,0.04);
+    transform: translateZ(0);
+  }
+
+  .stage h2 { margin:4px 0 10px 0; color:var(--army-dark) }
+  .stage p { max-width:82%; color:#222; font-size:1.02rem }
+
+  /* small map 3D cube look */
+  .map {
+    width:160px; height:160px; border-radius:10px; background:linear-gradient(180deg,#edf7ea,#e5f1de); border:3px solid rgba(83,107,64,0.08);
+    transform: rotateX(14deg) rotateY(-18deg) translateZ(40px); margin-top:10px; box-shadow: 0 18px 30px rgba(0,0,0,0.12);
+    display:flex; align-items:center; justify-content:center; font-size:0.9rem; color:var(--army-dark);
+  }
+
+  /* control bar */
+  .controls { display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap }
+  .emoji-btn { font-size:22px; padding:8px 10px; background:var(--army); color:white; border-radius:8px; cursor:pointer; border:none }
+  .emoji-btn:active{ transform:scale(0.98) }
+
+  /* ticket reveal */
+  .ticket {
+    display:none; margin-top:12px; padding:14px; border-radius:10px; background:linear-gradient(180deg,#fff7e6,#fff0c6); border:2px dashed var(--accent);
+    color:var(--army-dark); font-weight:700; font-size:1.1rem; box-shadow:0 12px 30px rgba(208,160,30,0.12);
+  }
+  .ticket a { color:var(--army-dark); text-decoration:none; font-weight:900; }
+
+  /* blackjack modal */
+  .modal {
+    position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:520px; max-width:95vw; z-index:100;
+    background:linear-gradient(180deg,#0f1b14,#12341f); color:white; padding:18px; border-radius:12px; display:none; box-shadow:0 40px 80px rgba(0,0,0,0.5)
+  }
+  .modal h3{ margin:0 0 8px 0 }
+  .cards-row{ display:flex; gap:8px; align-items:center }
+  .card-visual{ width:64px; height:94px; border-radius:8px; background:white; color:black; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; box-shadow:0 6px 18px rgba(0,0,0,0.25) }
+  .modal .btn{ background:var(--accent); color:#111; font-weight:800; padding:8px 12px; border-radius:8px }
+
+  /* footer small */
+  .small-footer{ position:absolute; bottom:8px; left:18px; font-size:0.82rem; color:#222; opacity:0.6 }
+
+  /* responsive tweaks */
+  @media(max-width:900px){ .card{ grid-template-columns: 1fr; height:92vh } .left{ max-height:45vh; overflow:auto } .map{ display:none } .modal{ width:90vw } }
+
+  /* accessible focus */
+  .option:focus{ outline:3px solid rgba(212,160,23,0.25) }
+</style>
+</head>
+<body>
+<div class="app" role="application" aria-label="Happy 27th Birthday Cri App">
+  <div class="bg" aria-hidden="true"></div>
+
+  <!-- Animated eagle SVG -->
+  <svg class="eagle" viewBox="0 0 640 512" role="img" aria-hidden="true">
+    <!-- A simple stylized eagle silhouette path (not depicting real person). -->
+    <path fill="#cfcfcf" d="M622.3 176.6c-... (shortened for readability) ..." />
+    <!-- Using a short placeholder path: page will display as decorative shape -->
+  </svg>
+
+  <div class="card" role="region" aria-label="Birthday quiz and mini games">
+
+    <!-- LEFT: Questions -->
+    <aside class="left" id="leftPanel">
+      <div class="logo"><div style="width:56px;height:56px;border-radius:8px;background:var(--army-dark);color:var(--sand);display:flex;align-items:center;justify-content:center;font-weight:900">27</div>
+      <div><h1>Happy 27th Birthday Cri</h1><div class="subtitle">Choose your path — the questions decide your destiny.</div></div></div>
+
+      <!-- Questions will be inserted here by JS -->
+      <div id="questionsContainer" aria-live="polite"></div>
+
+      <div style="margin-top:10px" class="muted-small">Tip: Click answers. Aim for bold responses to reach the ultimate reveal.</div>
+    </aside>
+
+    <!-- RIGHT: Stage and Mini Map -->
+    <main class="right" id="rightPanel">
+      <div class="stage" id="stage">
+        <h2 id="stageTitle">Welcome, Cri</h2>
+        <p id="stageText">Answer the questions to discover what fits your vibe. Will it end with a special event invite?</p>
+
+        <div style="display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap">
+          <div class="map" id="smallMap" title="Tiny 3D Map">Mini Map<br>(very small)</div>
+          <div>
+            <div class="controls">
+              <button class="emoji-btn" id="pearBtn" title="Philosophy / Motivation">🍐</button>
+              <button class="emoji-btn" id="spadeBtn" title="Unlock secret (Blackjack)">♠</button>
+              <button class="emoji-btn" id="revealBtn" title="Reveal ticket (after quiz)">🎟</button>
+            </div>
+            <div style="margin-top:8px">
+              <div class="muted-small">Click 🍐 for wisdom; click ♠ to play blackjack and unlock secrets.</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="philosophyBox" style="margin-top:10px;min-height:34px;color:var(--army-dark)"></div>
+
+        <div id="resultArea" style="margin-top:14px;"></div>
+
+        <div class="ticket" id="ticketBox" role="status" aria-live="polite">
+          🎟️ <span id="ticketText">You earned a ticket to BKFC Ice Wars — Oct 10!</span><br/>
+          <a id="ticketLink" href="https://www.bkfc.com" target="_blank" rel="noopener">Get your BKFC Ice Wars tickets (official)</a>
+        </div>
+
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="small-footer">Created for Cri's 27th — raw power & celebration.</div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Blackjack modal -->
+  <div class="modal" id="blackjackModal" role="dialog" aria-modal="true" aria-label="Blackjack mini game">
+    <h3>♠ Blackjack — Unlock Quest Secret</h3>
+    <div style="display:flex;gap:16px;align-items:center;justify-content:space-between">
+      <div>
+        <div style="color:#cfcfcf;font-size:0.9rem">Dealer</div>
+        <div id="dealerCards" class="cards-row" style="margin-top:8px"></div>
+      </div>
+      <div>
+        <div style="color:#cfcfcf;font-size:0.9rem">Player</div>
+        <div id="playerCards" class="cards-row" style="margin-top:8px"></div>
+      </div>
+      <div style="min-width:140px">
+        <div>Dealer: <span id="dealerScore">0</span></div>
+        <div>Player: <span id="playerScore">0</span></div>
+        <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end">
+          <button id="hitBtn" class="btn">Hit</button>
+          <button id="standBtn" class="btn">Stand</button>
+          <button id="closeBJ" class="btn" style="background:#9b9b9b">Close</button>
+        </div>
+      </div>
+    </div>
+    <div id="bjMsg" style="margin-top:12px;color:#ffd"></div>
+  </div>
+
+</div>
+
+<!-- ===== AUDIO (tiny tones embedded or CORS-safe) ===== -->
+<audio id="ding" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAAAB3AQACABAAZGF0YQAAAAA="></audio>
+<audio id="revealSound" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAAAB3AQACABAAZGF0YQAAAAA="></audio>
+
+<script>
+/* ===== Massive JS: quiz logic, blackjack, pear quotes, ticket reveal, etc. ===== */
+
+/* ---------- Data: questions and options ---------- */
+const questions = [
+  {id:'q1', text:'How do you feel about raw physical strength and peak performance?', options:[
+    {id:'a1', text:'I worship peak male performance. Train to be alpha.', score:3},
+    {id:'a2', text:'I like to stay fit and strong but chill.', score:2},
+    {id:'a3', text:'Strength? Meh, I prefer comfort & games.', score:0}
+  ]},
+  {id:'q2', text:'Are you the gym-bro who grills meat, drinks protein shakes, and roars "rahhhhh!"?', options:[
+    {id:'b1', text:'Absolutely — meat, iron, and rahhhhh!', score:3},
+    {id:'b2', text:'Sometimes — I enjoy a heavy session.', score:2},
+    {id:'b3', text:'Nope — I watch from the couch.', score:0}
+  ]},
+  {id:'q3', text:'Do you appreciate aggressive sport, contact, and controlled violence (like competitive fighting)?', options:[
+    {id:'c1', text:'Yes — combat sports hype me up.', score:3},
+    {id:'c2', text:'Sometimes, for spectacle.', score:1},
+    {id:'c3', text:'Not really — prefer non-contact sports.', score:0}
+  ]},
+  {id:'q4', text:'Would you enjoy an event with blood sport themes (non-graphic), adrenaline, and raw energy?', options:[
+    {id:'d1', text:'Sign me up — adrenaline is life.', score:3},
+    {id:'d2', text:'Depends on the vibe.', score:1},
+    {id:'d3', text:'No thanks.', score:0}
+  ]},
+  {id:'q5', text:'Are tanks, raw power, and “caveman” mentality a fun aesthetic to you (in a playful/entertaining way)?', options:[
+    {id:'e1', text:'Yes — the louder, the better.', score:2},
+    {id:'e2', text:'I like military aesthetics but not real war.', score:1},
+    {id:'e3', text:'No — not my style.', score:0}
+  ]},
+  {id:'q6', text:'How much does “being a bro” (hair, beard, grunts, hard drinks) matter to your plans?', options:[
+    {id:'f1', text:'It defines my weekends.', score:2},
+    {id:'f2', text:'It’s an occasional vibe.', score:1},
+    {id:'f3', text:'Not at all.', score:0}
+  ]},
+  {id:'q7', text:'Would you rather: 1) Watch TV, 2) Multiplayer gaming, or 3) Go to a live combat sports event?', options:[
+    {id:'g1', text:'Live event — give me the arena.', score:3},
+    {id:'g2', text:'Gaming or TV — cozy wins.', score:0},
+    {id:'g3', text:'Depends on company & vibe.', score:1}
+  ]},
+  {id:'q8', text:'If offered a trip to BKFC Ice Wars on Oct 10, what would you choose?', options:[
+    {id:'h1', text:'Attend and experience the hype!', score:3},
+    {id:'h2', text:'Watch highlights later.', score:0},
+    {id:'h3', text:'Maybe if friends go.', score:1}
+  ]}
+];
+
+/* ---------- state ---------- */
+let answers = {}; // questionId => option
+let totalScore = 0;
+
+/* ---------- DOM references ---------- */
+const qContainer = document.getElementById('questionsContainer');
+const stageTitle = document.getElementById('stageTitle');
+const stageText = document.getElementById('stageText');
+const resultArea = document.getElementById('resultArea');
+const ticketBox = document.getElementById('ticketBox');
+const ticketLink = document.getElementById('ticketLink');
+const philosophyBox = document.getElementById('philosophyBox');
+
+const pearBtn = document.getElementById('pearBtn');
+const spadeBtn = document.getElementById('spadeBtn');
+const revealBtn = document.getElementById('revealBtn');
+
+const ding = document.getElementById('ding');
+const revealSound = document.getElementById('revealSound');
+
+/* ---------- Initialize questions UI ---------- */
+function buildQuestions(){
+  qContainer.innerHTML = '';
+  questions.forEach(q=>{
+    const qDiv = document.createElement('div');
+    qDiv.className = 'question';
+    qDiv.id = q.id;
+    const h = document.createElement('h3');
+    h.innerText = q.text;
+    qDiv.appendChild(h);
+
+    const opts = document.createElement('div');
+    opts.className = 'options';
+    q.options.forEach(opt=>{
+      const b = document.createElement('button');
+      b.className = 'option';
+      b.setAttribute('data-q', q.id);
+      b.setAttribute('data-opt', opt.id);
+      b.setAttribute('data-score', opt.score);
+      b.innerHTML = `<span>${opt.text}</span><span style="opacity:0.6">+${opt.score}</span>`;
+      b.addEventListener('click', onOptionClick);
+      opts.appendChild(b);
+    });
+    qDiv.appendChild(opts);
+    qContainer.appendChild(qDiv);
+  });
+
+  // final submission button
+  const submitDiv = document.createElement('div');
+  submitDiv.style.marginTop = '14px';
+  const submitBtn = document.createElement('button');
+  submitBtn.textContent = 'Finish Quiz & Reveal Recommendation';
+  submitBtn.className = 'btn';
+  submitBtn.addEventListener('click', finalizeQuiz);
+  submitDiv.appendChild(submitBtn);
+  qContainer.appendChild(submitDiv);
+}
+
+/* ---------- Option click handler ---------- */
+function onOptionClick(e){
+  const btn = e.currentTarget;
+  const qid = btn.getAttribute('data-q');
+  const optid = btn.getAttribute('data-opt');
+  const score = Number(btn.getAttribute('data-score') || 0);
+
+  answers[qid] = {opt:optid, score};
+  playDing();
+
+  // visual selection
+  const parent = btn.parentElement;
+  Array.from(parent.children).forEach(c=> c.style.boxShadow='none' );
+  btn.style.boxShadow = '0 10px 24px rgba(0,0,0,0.12)';
+  btn.style.background = 'linear-gradient(180deg,#fff9e6,#fff2cc)';
+
+  // update stage text briefly
+  stageTitle.innerText = 'Question noted';
+  stageText.innerText = 'Keep going — this will shape the final recommendation.';
+}
+
+/* ---------- scoring and finalization ---------- */
+function finalizeQuiz(){
+  // ensure all questions answered? Not required, but can prompt
+  let missing = questions.filter(q=>!answers[q.id]);
+  if(missing.length > 0){
+    if(!confirm(`You skipped ${missing.length} question(s). Continue anyway?`)) return;
+  }
+
+  totalScore = Object.values(answers).reduce((s,a)=> s + (a.score||0), 0);
+
+  // analyze and craft recommendation
+  let recommendation = analyzeAnswers(totalScore);
+  resultArea.innerHTML = `<div style="padding:12px;border-radius:8px;background:linear-gradient(180deg,#fff,#fafafa);border:1px solid rgba(0,0,0,0.04)"><strong>Recommendation:</strong><p style="margin:8px 0">${recommendation}</p></div>`;
+
+  // if score high, show ticket suggestion and reveal button
+  if(totalScore >= 16){
+    // strong push toward BKFC Ice Wars
+    ticketBox.style.display = 'block';
+    ticketLink.href = 'https://www.bkfc.com/events'; // official BKFC events page as a reliable anchor
+    ticketLink.innerText = 'View BKFC Ice Wars (Official BKFC Events)';
+    playRevealSound();
+    // show final celebratory message
+    stageTitle.innerText = 'Result: The Arena Calls';
+    stageText.innerText = 'Based on your answers, the best possible vibe is: live combat spectacle — Ice Wars!';
+  } else if(totalScore >= 9){
+    ticketBox.style.display = 'block';
+    // softer push
+    ticketTextUpdate('You might enjoy BKFC Ice Wars — Oct 10. Consider going with mates.');
+    ticketLink.href = 'https://www.bkfc.com/events';
+    playDing();
+    stageTitle.innerText = 'Result: Consider the Event';
+    stageText.innerText = 'You are intrigued by the raw energy. A live event could be a great experience.';
+  } else {
+    ticketBox.style.display = 'none';
+    stageTitle.innerText = 'Result: Chill Vibes';
+    stageText.innerText = 'Your answers suggest more low-key plans — gaming, TV, or a gym session might suit.';
+  }
+
+  // show a short breakdown
+  showBreakdown();
+}
+
+/* helper to change ticket text */
+function ticketTextUpdate(txt){
+  const boxText = document.getElementById('ticketText');
+  if(boxText) boxText.innerText = txt;
+}
+
+/* analyze function: craft a text */
+function analyzeAnswers(score){
+  // Very simple interpretation with humor
+  if(score >= 20) return "Full warrior-mode: You're peak-psyche for a live fight spectacle. Ice Wars Oct 10 is the perfect fit — roar and bring the crew.";
+  if(score >= 15) return "Strongly inclined to attend a raw, high-energy event. The BKFC Ice Wars fits your taste for intensity and spectacle.";
+  if(score >= 9) return "You're intrigued by action and may enjoy the event with friends — it could be an unforgettable night.";
+  return "You prefer more casual or competitive but less violent entertainment — a great night could be gaming, TV, or hitting the gym.";
+}
+
+/* show breakdown of answers and quick stats */
+function showBreakdown(){
+  const breakdown = document.createElement('div');
+  breakdown.style.marginTop = '12px';
+  breakdown.innerHTML = `<details style="padding:10px;border-radius:8px;background:#fffef0;border:1px solid rgba(0,0,0,0.04)">
+    <summary style="font-weight:700">See your answers & score (click)</summary>
+    <div style="margin-top:8px">${questions.map(q=>{
+      const a = answers[q.id];
+      const chosen = q.options.find(o=>o.id === (a && a.opt));
+      return `<div style="padding:6px 0"><strong>${q.text}</strong><br/><em>${chosen?escapeHtml(chosen.text):'<span style="color:#777">No answer</span>'}</em></div>`;
+    }).join('')}</div>
+    <div style="margin-top:8px"><strong>Total score:</strong> ${totalScore}</div>
+  </details>`;
+  resultArea.appendChild(breakdown);
+}
+
+/* escape helper */
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+
+/* ---------- pear (philosophy) button ---------- */
+const pearQuotes = [
+  "Strength without wisdom is a ship without a compass.",
+  "A measured roar is louder than constant shouting.",
+  "Train mind, train body, honor the craft.",
+  "Raw power is useful only when guided by purpose.",
+  "A warrior is graceful in victory and humble in practice.",
+  "Courage is quiet until it's time to make noise.",
+  "Build habit like muscle; grow quietly and explosively."
+];
+
+pearBtn.addEventListener('click', ()=>{
+  const q = pearQuotes[Math.floor(Math.random()*pearQuotes.length)];
+  philosophyBox.innerText = q;
+  playDing();
+});
+
+/* ---------- spade (blackjack) button ---------- */
+/* Blackjack game code: simple, single-deck, no betting, auto-evaluate */
+const blackjackModal = document.getElementById('blackjackModal');
+const dealerCards = document.getElementById('dealerCards');
+const playerCards = document.getElementById('playerCards');
+const dealerScoreEl = document.getElementById('dealerScore');
+const playerScoreEl = document.getElementById('playerScore');
+const hitBtn = document.getElementById('hitBtn');
+const standBtn = document.getElementById('standBtn');
+const closeBJ = document.getElementById('closeBJ');
+const bjMsg = document.getElementById('bjMsg');
+
+let deck = [], playerHand = [], dealerHand = [], inGame=false;
+
+spadeBtn.addEventListener('click', ()=>{
+  // open modal and start game
+  openBlackjack();
+  playDing();
+  // show secret message when spade clicked (unlocked)
+  setTimeout(()=> {
+    alert('You have unlocked a secret message: Hard Rock Casino added to quest!');
+    // You can also append to result area
+    const note = document.createElement('div');
+    note.style.marginTop='8px';
+    note.style.padding='8px';
+    note.style.borderRadius='8px';
+    note.style.background='#fff8e6';
+    note.innerHTML = '<strong>Quest update:</strong> Hard Rock Casino added to quest!';
+    resultArea.prepend(note);
+  }, 300);
+});
+
+closeBJ.addEventListener('click', ()=>{ closeBlackjack(); });
+
+function openBlackjack(){
+  resetDeck(); shuffleDeck();
+  playerHand=[]; dealerHand=[]; inGame=true; bjMsg.innerText='';
+  // initial deal
+  playerHand.push(drawCard()); dealerHand.push(drawCard());
+  playerHand.push(drawCard()); dealerHand.push(drawCard());
+  renderHands();
+  blackjackModal.style.display='block';
+  evaluateGame();
+}
+
+function closeBlackjack(){
+  blackjackModal.style.display='none';
+  inGame=false;
+}
+
+function resetDeck(){
+  deck = [];
+  const suits = ['♠','♥','♦','♣'];
+  const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+  for(const s of suits){
+    for(const r of ranks) deck.push({suit:s,rank:r});
+  }
+}
+
+function shuffleDeck(){
+  for(let i=deck.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]] = [deck[j],deck[i]];
+  }
+}
+
+function drawCard(){ return deck.shift(); }
+
+function cardValue(card, currentSum){
+  if(!card) return 0;
+  if(['J','Q','K'].includes(card.rank)) return 10;
+  if(card.rank === 'A') return (currentSum + 11 <= 21) ? 11 : 1;
+  return Number(card.rank);
+}
+
+function handValue(hand){
+  // handle Aces flexibly
+  let sum=0, aces=0;
+  for(const c of hand){
+    if(c.rank === 'A'){ aces++; sum+=11; } else if(['J','Q','K'].includes(c.rank)){ sum+=10 } else sum += Number(c.rank);
+  }
+  while(sum>21 && aces>0){ sum -= 10; aces--; }
+  return sum;
+}
+
+function renderHands(){
+  dealerCards.innerHTML=''; playerCards.innerHTML='';
+  dealerHand.forEach(c=>{
+    const el = document.createElement('div');
+    el.className='card-visual';
+    el.innerText = `${c.rank}${c.suit}`;
+    dealerCards.appendChild(el);
+  });
+  playerHand.forEach(c=>{
+    const el = document.createElement('div');
+    el.className='card-visual';
+    el.innerText = `${c.rank}${c.suit}`;
+    playerCards.appendChild(el);
+  });
+  dealerScoreEl.innerText = handValue(dealerHand);
+  playerScoreEl.innerText = handValue(playerHand);
+}
+
+hitBtn.addEventListener('click', ()=>{ if(!inGame) return; playerHand.push(drawCard()); renderHands(); const pv = handValue(playerHand); if(pv>21){ bjMsg.innerText = 'Bust! You lose.'; inGame=false; } });
+standBtn.addEventListener('click', ()=>{ if(!inGame) return; // dealer plays
+  while(handValue(dealerHand) < 17) { dealerHand.push(drawCard()); }
+  renderHands();
+  const dv = handValue(dealerHand), pv = handValue(playerHand);
+  let msg=''; if(pv>21) msg='You busted!'; else if(dv>21) msg='Dealer busted — You win!'; else if(pv>dv) msg='You win!'; else if(pv===dv) msg='Push (tie).'; else msg='Dealer wins!';
+  bjMsg.innerText = msg;
+  inGame=false;
+  // If player wins or tie, unlock special note (optional)
+  if(msg.includes('win')) {
+    const n = document.createElement('div'); n.style.marginTop='8px'; n.style.background='#e8f9ee'; n.style.padding='8px'; n.style.borderRadius='6px';
+    n.innerHTML = '<strong>Blackjack Bonus:</strong> You found a lead — Hard Rock Casino added to your quest map!';
+    resultArea.prepend(n);
+  }
+});
+
+/* ---------- small map: render a tiny "3D" grid with user marker ---------- */
+const smallMap = document.getElementById('smallMap');
+function renderMap(highlight='start'){
+  smallMap.innerHTML = ''; // render tiny grid
+  const grid = document.createElement('div');
+  grid.style.display='grid';
+  grid.style.gridTemplateColumns='repeat(5,1fr)';
+  grid.style.gridGap='6px';
+  grid.style.width='120px';
+  for(let i=0;i<25;i++){
+    const cell = document.createElement('div');
+    cell.style.background = (i===12)?'linear-gradient(180deg,#ffd7a6,#ffdba6)':'linear-gradient(180deg,#e8f1e0,#eef7ec)';
+    cell.style.borderRadius='6px';
+    cell.style.height='18px';
+    cell.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.4)';
+    if(i===12){
+      cell.style.display='flex'; cell.style.alignItems='center'; cell.style.justifyContent='center';
+      cell.innerHTML = '<small style="font-weight:700;color:#3b4f2f">You</small>';
+    }
+    grid.appendChild(cell);
+  }
+  smallMap.appendChild(grid);
+}
+renderMap();
+
+/* ---------- ticket reveal button: reveal final link only if quiz favorable; otherwise gentle nudge ---------- */
+revealBtn.addEventListener('click', ()=>{
+  if(totalScore >= 15){
+    ticketBox.style.display = 'block';
+    ticketTextUpdate('🎟️ Final Ticket: BKFC Ice Wars — Oct 10 (recommended for your vibe)');
+    ticketLink.href = 'https://www.bkfc.com/events'; // official BKFC site
+    ticketLink.innerText = 'BKFC Ice Wars — Oct 10 (Official Event Page)';
+    playRevealSound();
+    window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+  } else {
+    alert('Your quiz results suggest the event may not be the best match — but you can still go if you want the experience!');
+    ticketBox.style.display = 'block';
+    ticketTextUpdate('Consider BKFC Ice Wars — Oct 10 (optional).');
+    ticketLink.href = 'https://www.bkfc.com/events';
+    playDing();
+  }
+});
+
+/* ---------- utilities: sounds ---------- */
+function playDing(){ try{ ding.currentTime=0; ding.play(); }catch(e){} }
+function playRevealSound(){ try{ revealSound.currentTime=0; revealSound.play(); }catch(e){} }
+
+/* ---------- initial render ---------- */
+buildQuestions();
+
+/* ---------- Helpers to persist & small UX polish ---------- */
+/* save answers to localStorage occasionally */
+setInterval(()=>{ localStorage.setItem('cri_quiz_answers', JSON.stringify(answers)); }, 4000);
+/* load previous answers if exist */
+(function restoreAnswers(){
+  const raw = localStorage.getItem('cri_quiz_answers');
+  if(!raw) return;
+  try{
+    const old = JSON.parse(raw);
+    if(typeof old === 'object'){
+      answers = old;
+      // pre-select visuals
+      Object.entries(answers).forEach(([qid, val])=>{
+        const qel = document.getElementById(qid);
+        if(!qel) return;
+        const opt = qel.querySelector(`[data-opt="${val.opt}"]`);
+        if(opt){ opt.style.boxShadow = '0 10px 24px rgba(0,0,0,0.12)'; opt.style.background = 'linear-gradient(180deg,#fff9e6,#fff2cc)'; }
+      });
+    }
+  }catch(e){}
+})();
+
+/* expose some debug */
+window._criApp = {answers, finalizeQuiz, openBlackjack, renderMap};
+
+</script>
+</body>
+</html>
