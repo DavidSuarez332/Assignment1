@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GATORLAND Ticket</title>
+  <style>
+    body {
+      background: pink;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      overflow: hidden;
+    }
+    .emoji-btn {
+      font-size: 3rem;
+      cursor: pointer;
+      margin: 20px;
+      transition: transform 0.2s;
+    }
+    .emoji-btn:hover {
+      transform: scale(1.2);
+    }
+    #ticket {
+      display: none;
+      margin-top: 40px;
+      padding: 30px;
+      border: 5px dashed lime;
+      border-radius: 20px;
+      background: linear-gradient(45deg, green, yellow);
+      color: black;
+      font-size: 2rem;
+      font-weight: bold;
+      animation: flash 1s infinite;
+    }
+    @keyframes flash {
+      0% { box-shadow: 0 0 20px red; }
+      50% { box-shadow: 0 0 20px blue; }
+      100% { box-shadow: 0 0 20px red; }
+    }
+    .gators {
+      font-size: 2rem;
+      position: absolute;
+      animation: float 6s infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(100vh); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: translateY(-10vh); opacity: 0; }
+    }
+    .celebration {
+      font-size: 2rem;
+      position: absolute;
+      animation: float 4s forwards;
+    }
+    #loveNote {
+      display: none;
+      margin-top: 20px;
+      font-size: 1.8rem;
+      color: red;
+      text-shadow: 1px 1px 5px white;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <h1>🎟️ Click below to reveal your ticket 🎟️</h1>
+  <div>
+    <span class="emoji-btn" id="email">📧</span>
+    <span class="emoji-btn" id="peach">🍑</span>
+  </div>
+
+  <div id="ticket">
+    🐊 GATORLAND TICKET 🐊<br>
+    Valid: September 26 or 27 or 28<br>
+    🎉 Admission for 1 🎉
+  </div>
+
+  <div id="loveNote">❤️😘🥰 I love you very much Alyssa Dahl 💖💞💘</div>
+
+  <!-- Sounds -->
+  <audio id="sound1" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+  <audio id="sound2" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+  <audio id="sound3" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+  <audio id="sound4" src="https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg"></audio>
+  <audio id="sound5" src="https://actions.google.com/sounds/v1/cartoon/siren_whistle.ogg"></audio>
+  <audio id="sound6" src="https://actions.google.com/sounds/v1/cartoon/slide_whistle_to_drum_hit.ogg"></audio>
+
+  <audio id="fart" src="https://actions.google.com/sounds/v1/cartoon/fart.ogg"></audio>
+
+  <script>
+    const emailBtn = document.getElementById("email");
+    const peachBtn = document.getElementById("peach");
+    const ticket = document.getElementById("ticket");
+    const loveNote = document.getElementById("loveNote");
+    const fart = document.getElementById("fart");
+
+    const sounds = [
+      document.getElementById("sound1"),
+      document.getElementById("sound2"),
+      document.getElementById("sound3"),
+      document.getElementById("sound4"),
+      document.getElementById("sound5"),
+      document.getElementById("sound6")
+    ];
+
+    emailBtn.addEventListener("click", () => {
+      ticket.style.display = "block";
+      loveNote.style.display = "block";
+      // Play all six noises in sequence
+      sounds.forEach((s, i) => setTimeout(() => s.play(), i * 300));
+      spawnGators();
+      spawnCelebration();
+    });
+
+    peachBtn.addEventListener("click", () => {
+      fart.play();
+      let puff = document.createElement("div");
+      puff.textContent = "💨";
+      puff.style.position = "absolute";
+      puff.style.left = (peachBtn.offsetLeft + 30) + "px";
+      puff.style.top = (peachBtn.offsetTop - 20) + "px";
+      puff.style.fontSize = "2rem";
+      document.body.appendChild(puff);
+      setTimeout(() => puff.remove(), 1000);
+    });
+
+    function spawnGators() {
+      for (let i = 0; i < 5; i++) {
+        let gator = document.createElement("div");
+        gator.textContent = "🐊";
+        gator.className = "gators";
+        gator.style.left = Math.random() * window.innerWidth + "px";
+        gator.style.animationDuration = (4 + Math.random() * 4) + "s";
+        document.body.appendChild(gator);
+        setTimeout(() => gator.remove(), 6000);
+      }
+    }
+
+    function spawnCelebration() {
+      const emojis = ["🎉", "🎊", "✨", "🎈", "🥳", "💫", "💝", "😍", "💕"];
+      for (let i = 0; i < 15; i++) {
+        let conf = document.createElement("div");
+        conf.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        conf.className = "celebration";
+        conf.style.left = Math.random() * window.innerWidth + "px";
+        conf.style.top = window.innerHeight + "px";
+        conf.style.animationDuration = (2 + Math.random() * 2) + "s";
+        document.body.appendChild(conf);
+        setTimeout(() => conf.remove(), 4000);
+      }
+    }
+  </script>
+</body>
+</html>
