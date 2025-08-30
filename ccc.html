@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛡️ Medieval Rank Quiz — 20 Questions</title>
+<style>
+:root{
+  --bg1:#061523;
+  --panel: rgba(255,255,255,0.03);
+  --accent:#d4af37;
+  --accent2:#ff6b6b;
+  --muted:#bcd7e6;
+}
+body,html{margin:0;padding:0;height:100%;font-family:Georgia, "Times New Roman", serif;background:linear-gradient(to bottom,#061523,#021a2b);color:var(--muted);}
+.wrap{max-width:1200px;margin:auto;padding:16px;}
+h1{color:var(--accent);}
+.panel{background:var(--panel);padding:16px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6);}
+.options{margin-top:12px;display:grid;gap:10px;}
+.opt{background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);cursor:pointer;display:flex;align-items:center;transition:0.12s;}
+.opt:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,0.4);}
+.opt.chosen{border:1px solid var(--accent);box-shadow:0 6px 20px rgba(212,175,55,0.1);}
+.emoji{margin-right:10px;font-size:20px;}
+.controls{margin-top:16px;display:flex;gap:8px;}
+button{padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:#071017;font-weight:800;cursor:pointer;}
+button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);}
+.progress{height:10px;background:rgba(255,255,255,0.02);border-radius:8px;overflow:hidden;margin-top:8px;}
+.bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;}
+.npc-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.npc{padding:8px;border-radius:8px;background:rgba(0,0,0,0.25);display:flex;justify-content:space-between;align-items:center;}
+#npc-talk{height:200px;overflow:auto;padding:8px;background:#04151c;border-radius:8px;border:1px solid rgba(255,255,255,0.02);margin-top:12px;}
+.confetti{position:fixed;inset:0;pointer-events:none;opacity:0.0;background: radial-gradient(circle at 10% 10%, rgba(255,255,255,0.05), transparent 4%), radial-gradient(circle at 80% 40%, rgba(255,107,107,0.06), transparent 3%), radial-gradient(circle at 40% 70%, rgba(212,175,55,0.04), transparent 2%);}
+</style>
+</head>
+<body>
+<div class="confetti"></div>
+<div class="wrap">
+<h1>🛡️ 20 Questions — Which Medieval Rank Are You?</h1>
+
+<div class="panel" id="quiz-panel">
+  <div><strong>Question <span id="qnum">1</span>/20</strong></div>
+  <div id="q-title" style="margin-top:6px;font-size:1.2rem;">Loading question...</div>
+  <div id="q-sub" style="opacity:0.8;margin-top:4px;">Think like a medieval adventurer.</div>
+  <div class="options" id="options"></div>
+  <div class="controls">
+    <button class="ghost" onclick="prevQ()">⬅️ Previous</button>
+    <button onclick="nextQ()">➡️ Next</button>
+    <button onclick="finishQuiz()" style="background:linear-gradient(90deg,var(--accent2),var(--accent))">🏁 Finish Quiz</button>
+  </div>
+  <div class="progress"><div class="bar" id="progress-bar"></div></div>
+</div>
+
+<div class="panel">
+<h3>NPCs & Reactions</h3>
+<div class="npc-list">
+  <div class="npc"><div><strong>Thompson</strong> <span style="opacity:0.7;">Orc — blunt</span></div><button class="ghost" onclick="npcSpeak('thompson')">Talk</button></div>
+  <div class="npc"><div><strong>David</strong> <span style="opacity:0.7;">Merchant — clever</span></div><button class="ghost" onclick="npcSpeak('david')">Talk</button></div>
+  <div class="npc"><div><strong>Bronfelo</strong> <span style="opacity:0.7;">Tracker — keen</span></div><button class="ghost" onclick="npcSpeak('bronfelo')">Talk</button></div>
+  <div class="npc"><div><strong>Popke</strong> <span style="opacity:0.7;">Gremlin — mischievous</span></div><button class="ghost" onclick="npcSpeak('popke')">Talk</button></div>
+  <div class="npc"><div><strong>Eldra</strong> <span style="opacity:0.7;">Vampire — enigmatic</span></div><button class="ghost" onclick="npcSpeak('eldra')">Talk</button></div>
+</div>
+<div id="npc-talk"></div>
+</div>
+
+<div id="result-area" class="panel" style="margin-top:12px;"></div>
+</div>
+
+<script>
+let questions=[];
+let answers=[];
+let currentQ=0;
+
+// Full 20 medieval-themed questions
+const questionData=[
+{
+title:"A rival lord challenges you to duel for honor.",
+sub:"What approach do you take?",
+options:[
+{text:"Accept boldly with sword ⚔️",score:3,emoji:"⚔️"},
+{text:"Negotiate peace 🤝",score:2,emoji:"🤝"},
+{text:"Set a clever trap 🧠",score:4,emoji:"🧠"},
+{text:"Run away 🏃",score:1,emoji:"🏃"}
+]
+},
+{
+title:"A dragon attacks the village!",
+sub:"How do you respond?",
+options:[
+{text:"Fight head-on 🔥",score:4,emoji:"🔥"},
+{text:"Evacuate villagers 🛡️",score:3,emoji:"🛡️"},
+{text:"Use cunning and distractions 🎭",score:4,emoji:"🎭"},
+{text:"Hide in castle 🏰",score:1,emoji:"🏰"}
+]
+},
+{
+title:"You find a mysterious treasure chest.",
+sub:"Do you open it?",
+options:[
+{text:"Open immediately 💰",score:3,emoji:"💰"},
+{text:"Check for traps 🕵️",score:4,emoji:"🕵️"},
+{text:"Ignore it ❌",score:1,emoji:"❌"},
+{text:"Ask a wizard 🔮",score:2,emoji:"🔮"}
+]
+},
+{
+title:"A peasant begs for help against a corrupt tax collector.",
+sub:"Your choice?",
+options:[
+{text:"Defend them ⚔️",score:4,emoji:"⚔️"},
+{text:"Report to king 👑",score:3,emoji:"👑"},
+{text:"Take bribe 💵",score:1,emoji:"💵"},
+{text:"Ignore 🙈",score:1,emoji:"🙈"}
+]
+},
+{
+title:"A mysterious stranger offers forbidden knowledge.",
+sub:"Do you accept?",
+options:[
+{text:"Yes, study it 📜",score:4,emoji:"📜"},
+{text:"Refuse, too risky ✋",score:2,emoji:"✋"},
+{text:"Sell the info 💰",score:3,emoji:"💰"},
+{text:"Destroy it 🔥",score:3,emoji:"🔥"}
+]
+},
+{
+title:"An army approaches your castle walls.",
+sub:"How do you act?",
+options:[
+{text:"Lead defense ⚔️",score:4,emoji:"⚔️"},
+{text:"Send envoys 🤝",score:3,emoji:"🤝"},
+{text:"Hide and observe 🕵️",score:2,emoji:"🕵️"},
+{text:"Surrender 🏳️",score:1,emoji:"🏳️"}
+]
+},
+{
+title:"A bard wants to perform at your feast.",
+sub:"Do you allow?",
+options:[
+{text:"Invite warmly 🎶",score:3,emoji:"🎶"},
+{text:"Ask for tales of heroism 📖",score:4,emoji:"📖"},
+{text:"Ignore them 😐",score:1,emoji:"😐"},
+{text:"Pay to leave 💸",score:1,emoji:"💸"}
+]
+},
+{
+title:"A spy infiltrates your court.",
+sub:"What do you do?",
+options:[
+{text:"Interrogate ⚔️",score:4,emoji:"⚔️"},
+{text:"Use them for intel 🧠",score:4,emoji:"🧠"},
+{text:"Expel quietly 🏃",score:2,emoji:"🏃"},
+{text:"Ignore 👁️",score:1,emoji:"👁️"}
+]
+},
+{
+title:"A famine strikes the land.",
+sub:"Your action?",
+options:[
+{text:"Distribute food 🥖",score:4,emoji:"🥖"},
+{text:"Raise taxes 💰",score:1,emoji:"💰"},
+{text:"Request aid 🤝",score:3,emoji:"🤝"},
+{text:"Do nothing ❌",score:1,emoji:"❌"}
+]
+},
+{
+title:"A witch offers a potion.",
+sub:"Do you drink it?",
+options:[
+{text:"Drink bravely 🍷",score:3,emoji:"🍷"},
+{text:"Refuse 🛡️",score:2,emoji:"🛡️"},
+{text:"Examine it 🔮",score:4,emoji:"🔮"},
+{text:"Throw it away ❌",score:1,emoji:"❌"}
+]
+},
+// Add 10 more questions similarly...
+{
+title:"A tournament is announced.",
+sub:"What’s your plan?",
+options:[
+{text:"Participate and win 🏆",score:4,emoji:"🏆"},
+{text:"Train but watch ⚔️",score:3,emoji:"⚔️"},
+{text:"Bet on others 💰",score:2,emoji:"💰"},
+{text:"Ignore it 💤",score:1,emoji:"💤"}
+]
+},
+{
+title:"A neighboring kingdom seeks alliance.",
+sub:"Your strategy?",
+options:[
+{text:"Agree 🤝",score:3,emoji:"🤝"},
+{text:"Negotiate for benefit 📜",score:4,emoji:"📜"},
+{text:"Refuse ✋",score:1,emoji:"✋"},
+{text:"Spy first 🕵️",score:3,emoji:"🕵️"}
+]
+},
+{
+title:"A monster lurks in the woods.",
+sub:"How do you respond?",
+options:[
+{text:"Hunt it ⚔️",score:4,emoji:"⚔️"},
+{text:"Avoid it 🏃",score:1,emoji:"🏃"},
+{text:"Trap it 🪤",score:3,emoji:"🪤"},
+{text:"Study it 🧠",score:3,emoji:"🧠"}
+]
+},
+{
+title:"Your squire seeks advice.",
+sub:"You tell them:",
+options:[
+{text:"Be brave ⚔️",score:4,emoji:"⚔️"},
+{text:"Be wise 🧠",score:3,emoji:"🧠"},
+{text:"Be cautious 🛡️",score:2,emoji:"🛡️"},
+{text:"Follow me blindly 👁️",score:1,emoji:"👁️"}
+]
+},
+{
+title:"A dragon egg hatches near you.",
+sub:"Do you intervene?",
+options:[
+{text:"Raise it 🐉",score:4,emoji:"🐉"},
+{text:"Kill it ⚔️",score:2,emoji:"⚔️"},
+{text:"Study it 🔬",score:3,emoji:"🔬"},
+{text:"Leave alone 🌿",score:1,emoji:"🌿"}
+]
+},
+{
+title:"A festival is held in the village.",
+sub:"Your participation?",
+options:[
+{text:"Join joyfully 🎉",score:3,emoji:"🎉"},
+{text:"Judge contests 🏅",score:4,emoji:"🏅"},
+{text:"Ignore 😐",score:1,emoji:"😐"},
+{text:"Steal prizes 💰",score:1,emoji:"💰"}
+]
+},
+{
+title:"A rebel group plots against you.",
+sub:"Your choice?",
+options:[
+{text:"Confront directly ⚔️",score:4,emoji:"⚔️"},
+{text:"Spy on them 🕵️",score:4,emoji:"🕵️"},
+{text:"Bribe them 💰",score:2,emoji:"💰"},
+{text:"Do nothing ❌",score:1,emoji:"❌"}
+]
+},
+{
+title:"A knight challenges your honor.",
+sub:"How do you react?",
+options:[
+{text:"Accept duel ⚔️",score:4,emoji:"⚔️"},
+{text:"Negotiate 🧠",score:3,emoji:"🧠"},
+{text:"Avoid 🏃",score:1,emoji:"🏃"},
+{text:"Cheat cleverly 🎭",score:3,emoji:"🎭"}
+]
+},
+{
+title:"A magical artifact is found.",
+sub:"Your action?",
+options:[
+{text:"Use wisely 🔮",score:4,emoji:"🔮"},
+{text:"Sell 💰",score:2,emoji:"💰"},
+{text:"Hide 🏰",score:3,emoji:"🏰"},
+{text:"Destroy 🔥",score:1,emoji:"🔥"}
+]
+},
+{
+title:"An advisor disagrees with you.",
+sub:"How do you respond?",
+options:[
+{text:"Listen 🧠",score:3,emoji:"🧠"},
+{text:"Ignore ❌",score:1,emoji:"❌"},
+{text:"Punish ⚔️",score:2,emoji:"⚔️"},
+{text:"Debate fiercely 🎤",score:4,emoji:"🎤"}
+]
+}
+];
+
+function initQuiz(){
+  questions=questionData;
+  answers=new Array(questions.length).fill(null);
+  renderQuestion();
+}
+function renderQuestion(){
+  const q=questions[currentQ];
+  document.getElementById('qnum').innerText=currentQ+1;
+  document.getElementById('q-title').innerText=q.title;
+  document.getElementById('q-sub').innerText=q.sub;
+  const opts=document.getElementById('options');
+  opts.innerHTML='';
+  q.options.forEach((opt,i)=>{
+    const div=document.createElement('div');
+    div.className='opt';
+    if(answers[currentQ]===i) div.classList.add('chosen');
+    div.innerHTML=`<span class="emoji">${opt.emoji}</span>${opt.text}`;
+    div.onclick=()=>{answers[currentQ]=i;renderQuestion();};
+    opts.appendChild(div);
+  });
+  document.getElementById('progress-bar').style.width=((currentQ+1)/questions.length*100)+'%';
+}
+function nextQ(){if(currentQ<questions.length-1){currentQ++;renderQuestion();}}
+function prevQ(){if(currentQ>0){currentQ--;renderQuestion();}}
+function finishQuiz(){
+  let total=0;
+  answers.forEach((a,i)=>{if(a!==null) total+=questions[i].options[a].score;});
+  let rank='';
+  if(total<=30) rank='Peasant';
+  else if(total<=50) rank='Squire';
+  else if(total<=70) rank='Knight';
+  else rank='Lord';
+  document.getElementById('result-area').innerHTML=`<h2>🏆 Your Medieval Rank: ${rank}</h2>`;
+  document.querySelector('.confetti').style.opacity='0.2';
+}
+function npcSpeak(name){
+  const msgs={
+    thompson:'Thompson grunts: Hmm, interesting choice.',
+    david:'David nods: Clever indeed.',
+    bronfelo:'Bronfelo sniffs: I approve of your caution.',
+    popke:'Popke giggles mischievously.',
+    eldra:'Eldra smirks enigmatically.'
+  };
+  const talk=document.getElementById('npc-talk');
+  const p=document.createElement('p');
+  p.innerHTML=`<strong>${name}:</strong> ${msgs[name]}`;
+  talk.appendChild(p);
+  talk.scrollTop=talk.scrollHeight;
+}
+initQuiz();
+</script>
+</body>
+</html>
