@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8' />
+  <title>⚔️ Floating Isles — The Drifting Night (Expanded)</title>
+  <meta name='viewport' content='width=device-width,initial-scale=1' />
+  <style>
+    :root{--bg:#041021;--panel:rgba(255,255,255,0.04);--gold:#d4af37}
+    body{background:linear-gradient(180deg,var(--bg) 0%, #06314d 100%);color:#eef3f7;font-family:Georgia,serif;margin:0;padding:18px}
+    #wrap{max-width:1200px;margin:0 auto}
+    header{display:flex;justify-content:space-between;align-items:center}
+    h1{margin:0;padding:8px 0;font-size:26px}
+    .grid{display:grid;grid-template-columns:1fr 440px;gap:16px;margin-top:14px}
+    .panel{background:var(--panel);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+    button{background:var(--gold);border:none;padding:8px 10px;border-radius:8px;font-weight:700;cursor:pointer;margin:6px}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:inherit}
+    .small{padding:6px 8px;font-size:0.9rem}
+    #log{height:420px;overflow:auto;background:#02101a;padding:12px;border-radius:8px}
+    .npc{padding:8px;border-left:3px solid rgba(255,255,255,0.03);margin-bottom:8px}
+    .choice{display:block;padding:8px;margin:6px 0;background:rgba(255,255,255,0.02);border-radius:6px;cursor:pointer}
+    .quest{padding:8px;border-radius:6px;background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));margin-bottom:8px}
+    .status{font-weight:700;color:var(--gold)}
+    .muted{opacity:0.85;font-size:0.95rem}
+    pre{white-space:pre-wrap}
+  </style>
+</head>
+<body>
+  <div id='wrap'>
+    <header>
+      <h1>🜂 Floating Isles — The Drifting Night</h1>
+      <div class='muted'>Expanded: Rumors, Branching NPC Trees, Vampire Cabal, More Choices</div>
+    </header>
+
+    <div class='grid'>
+      <div>
+
+        <section class='panel'>
+          <h2>Character — <span id='pname'>Sky-Thief</span></h2>
+          <div><strong>HP:</strong> <span id='hp'>120</span> / <span id='maxhp'>120</span></div>
+          <div><strong>Coins:</strong> <span id='coins'>200</span></div>
+          <div><strong>Reputation:</strong> <span id='rep'>Neutral</span></div>
+          <div><strong>Inv:</strong> <span id='inv'>Hidden Shiv, Thief Cloak</span></div>
+
+          <div style='margin-top:12px'>
+            <button onclick='enterTavern()'>🍻 Enter Drunken Harpy</button>
+            <button onclick='openStore()'>🏪 Bazaar</button>
+            <button onclick='openMap()'>🗺️ Map</button>
+            <button onclick='openLog()' class='ghost'>Conversation Log</button>
+          </div>
+        </section>
+
+        <section class='panel' style='margin-top:12px'>
+          <h3>Active Quests</h3>
+          <div id='questList'></div>
+        </section>
+
+        <section class='panel' style='margin-top:12px'>
+          <h3>Actions & Mini-Games</h3>
+          <div>
+            <button onclick='playCardGame()'>🃏 Sky-Gambit (Cards)</button>
+            <button onclick='rollD20(true)'>🎲 Roll a D20</button>
+            <button onclick='pickpocket()'>👐 Pickpocket</button>
+            <button onclick='duel()'>⚔️ Duel</button>
+            <button onclick='dance()'>💃 Dance for Tip</button>
+          </div>
+          <p class='muted'>Actions have checks and may be affected by inventory, NPC relations, and rumors.</p>
+        </section>
+
+      </div>
+
+      <aside>
+        <section class='panel'>
+          <h3>Tavern — The Drunken Harpy</h3>
+          <div id='tavernNpcs'></div>
+          <div style='margin-top:8px'>
+            <button onclick='listenHeard()' class='small'>👂 Listen for Rumors</button>
+            <button onclick='startQuietVampires()' class='small'>🦇 Inspect Quiet Corner</button>
+          </div>
+        </section>
+
+        <section class='panel' style='margin-top:12px'>
+          <h3>Log</h3>
+          <div id='log'></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // ---------- State ----------
+    const state = {
+      player:{name:'Sky-Thief',hp:120,maxhp:120,coins:200,rep:0},
+      inventory:['Hidden Shiv','Thief Cloak'],
+      quests:[],
+      npcs:{},
+      rumors:[],
+      vampireCabal:{present:true, members:[]},
+      convoLog:[]
+    };
+
+    // ---------- Utils ----------
+    const logEl = document.getElementById('log');
+    const tavernEl = document.getElementById('tavernNpcs');
+    const questListEl = document.getElementById('questList');
+
+    function log(msg){ state.convoLog.push(msg); const p=document.createElement('p'); p.innerHTML=msg; logEl.appendChild(p); logEl.scrollTop = logEl.scrollHeight; }
+    function updateUI(){ document.getElementById('hp').textContent = state.player.hp; document.getElementById('coins').textContent = state.player.coins; document.getElementById('rep').textContent = state.player.rep>=8?'Honored':state.player.rep<=-8?'Notorious':'Neutral'; document.getElementById('inv').textContent = state.inventory.join(', '); renderTavern(); renderQuests(); }
+
+    function d20(){ return Math.floor(Math.random()*20)+1; }
+    function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+    // ---------- NPC / Dialogue System (expanded) ----------
+    function createTavernNPCs(){
+      // Maris, OldBen, Sylva, Lira, and new vampire cabal + rumors
+      const maris = {id:'maris',name:'Maris the Bold',rel:0,flags:{romance:false}, nodes:{}};
+      const ben = {id:'ben',name:'Old Ben',rel:0,flags:{wise:true},nodes:{}};
+      const syl = {id:'syl',name:'Sylva',rel:0,flags:{romance:false},nodes:{}};
+      const lira = {id:'lira',name:'Lira of Alleys',rel:0,flags:{betrayal:false},nodes:{}};
+
+      // Vampire cabal: quiet group in a corner, appears as 'Quiet Guests'
+      const vampLeader = {id:'vamp_lead',name:'Eldra Noct',rel:-2,flags:{cabal:true},nodes:{}};
+      const vamp2 = {id:'vamp2',name:'Mirek',rel:-1,flags:{cabal:true},nodes:{}};
+      const vamp3 = {id:'vamp3',name:'Sable',rel:-1,flags:{cabal:true},nodes:{}};
+
+      // Define nodes (simplified inline, many branches)
+      maris.nodes.start = {id:'start', text:"Maris hums: 'Storms o'er Amber Isle sing of treasure — but many hands will reach for it.'", options:[{text:"Ask of Amber Wreck", goto:'wreck'},{text:"Flatter Maris (romance)", goto:'flirt', effect:function(n){ n.rel+=2; }}]};
+      maris.nodes.wreck = {id:'wreck', text:"He leans: 'Bring me a gem and I'll trade a map. Or sail with me — danger for reward.'", options:[{text:"Barter for map", goto:'barter'},{text:"Sail with Maris (accept quest)", goto:'voyage', effect:function(){ offerQuest({id:'maris_voy',title:'Voyage: Amber Vault',desc:'Sail with Maris to Amber Isle to find a vault. Reward: Azure Gem + coins',reward:220,status:'open'}); }}]};
+      maris.nodes.flirt = {id:'flirt', text:"Maris blushes through bravado: 'Yer words warm a cold deck. Share a meal?'", options:[{text:"Accept meal (romance)", goto:'romance', effect:function(n){ n.flags.romance=true; log('<em>Maris warms to thee — romance path opened.</em>'); }},{text:"Decline politely", goto:'start'}]};
+
+      ben.nodes.start = {id:'start', text:"Old Ben: 'Anchors hum. False friends wear smiles like crowns.'", options:[{text:"Who is false?", goto:'false'},{text:"Buy him a drink (10 coins)", goto:'bribe', effect:function(){ if(state.player.coins>=10){ state.player.coins-=10; log('Ben shares a whispered secret for 10 coins.'); state.rumors.push('Lira may be involved with thieves across the port.'); } else log('No coin to bribe Ben.'); }}]};
+      ben.nodes.false = {id:'false', text:"'Look to the quiet ones,' he says — 'where laughter is too soft.'", options:[{text:"Ask about quiet ones", goto:'quiet'},{text:"Thank him", goto:'start'}]};
+      ben.nodes.quiet = {id:'quiet', text:"He nods toward the shadow table: 'They keep to themselves. They sip water that is not water.'", options:[{text:"Investigate Quiet Corner", goto:'invest'}]};
+
+      syl.nodes.start = {id:'start', text:"Sylva: 'A quick raid? The sea gives to those who take.'", options:[{text:"Join raid", goto:'raid', effect:function(){ offerQuest({id:'syl_raid',title:'Raid: Grain Barge',desc:'Assist Sylva in a quick raid. Reward: 40 coins',reward:40,status:'open'}); }},{text:"Dance with Sylva", goto:'dance', effect:function(){ const r = d20(); if(r>8){ state.player.coins+=10; log('Thy dance wins tips: +10 coins'); } else { log('The dance is clumsy, none notice.'); } }}]};
+
+      lira.nodes.start = {id:'start', text:"Lira eyes thy fingers: 'We have needs. Help, or be helped.'", options:[{text:"Help Lira (steal trinket)", goto:'help', effect:function(){ offerQuest({id:'lira_job',title:"Lira's Favor",desc:'Steal a trinket from a noble; return to Lira. Reward: 60 coins',reward:60,status:'open'}); }},{text:"Threaten Lira", goto:'threat', effect:function(){ lira.flags.betrayal=true; log('Lira eyes thee — trust erodes.'); }}]};
+
+      // Vampires are subtle — choices: observe, trade whispers, or offend
+      vampLeader.nodes.start = {id:'start', text:"Eldra: 'We favor silence and balance. Speak softly, and you may learn.'", options:[{text:"Approach and bow", goto:'polite', effect:function(n){ n.rel+=1; log('Eldra nods in measured approval.'); }},{text:"Make loud joke (offend)", goto:'offend', effect:function(){ vampLeader.rel-=2; log('Eldra's eyes narrow; the air chills.'); }}]};
+      vampLeader.nodes.polite = {id:'polite', text:"Eldra offers a subtle riddle about anchors and anchorsong.", options:[{text:"Answer riddle", goto:'riddle', effect:function(){ const r=d20(); if(r>11){ state.player.coins+=30; log('Eldra rewards thy wit with coin and a whispered route.'); } else { log('Thy answer falters; Eldra smiles thinly.'); } }}]};
+      vampLeader.nodes.offend = {id:'offend', text:"Eldra speaks low: 'Foolishness has a price.'", options:[{text:"Apologize", goto:'start', effect:function(){ vampLeader.rel+=1; }}]};
+
+      vamp2.nodes = vamp3.nodes = vampLeader.nodes;
+
+      state.npcs = { maris, ben, syl, lira, vamp_lead:vampLeader, vamp2, vamp3 };
+
+      // Vampire cabal member list for mechanics
+      state.vampireCabal.members = ['vamp_lead','vamp2','vamp3'];
+    }
+
+    // ---------- Rumor Propagation System ----------
+    // NPCs will spread rumors in the tavern; rumors can be true or false, affecting quests and relationships
+    function spreadRumor(sourceId, rumorText, truthy=true){
+      state.rumors.push({from:sourceId,text:rumorText,truth:truthy});
+      // choose a few NPCs to repeat rumor
+      const others = Object.keys(state.npcs).filter(k => k !== sourceId);
+      for(let i=0;i<Math.min(3,others.length);i++){
+        const pick = others[rand(0,others.length-1)];
+        log(`<em>${state.npcs[pick].name} whispers:</em> "${rumorText}"`);
+        // slight relation shift if rumor concerns them
+        if(rumorText.includes(state.npcs[pick].name)) state.npcs[pick].rel -= 1;
+      }
+    }
+
+    // Periodic rumor spread
+    function periodicRumor(){
+      // Randomly decide a rumor origin
+      const keys = Object.keys(state.npcs);
+      if(keys.length===0) return;
+      const who = keys[rand(0,keys.length-1)];
+      const r = Math.random();
+      if(r < 0.25) spreadRumor(who, 'They say the Leviathan hungers for anchors', true);
+      else if(r < 0.5) spreadRumor(who, 'Some claim Lira keeps list of thieves for profit', false);
+      else if(r < 0.75) spreadRumor(who, 'A merchant sails with an Azure Gem in the Glass Shoals', true);
+      else spreadRumor(who, 'Quiet guests in the corner are not what they seem', true);
+    }
+
+    setInterval(periodicRumor, 30000);
+
+    // ---------- Tavern Rendering & Interaction ----------
+    function renderTavern(){
+      tavernEl.innerHTML = '';
+      Object.values(state.npcs).forEach(npc => {
+        const div = document.createElement('div'); div.className='npc';
+        div.innerHTML = `<strong>${npc.name}</strong> <div class='muted'>relation: ${npc.rel}</div>` +
+                        `<div style='margin-top:6px'><button class='small' onclick="talk('${npc.id}')">Talk</button> <button class='small' onclick="observe('${npc.id}')">Observe</button></div>`;
+        tavernEl.appendChild(div);
+      });
+
+      // show vampire group as a special entry
+      if(state.vampireCabal.present){
+        const dv = document.createElement('div'); dv.className='npc'; dv.innerHTML = `<strong>Quiet Guests</strong> <div class='muted'>They sit in a hush; their eyes gleam faintly.</div><div style='margin-top:6px'><button class='small' onclick="inspectVampires()">Inspect</button> <button class='small' onclick="ignoreVampires()">Ignore</button></div>`; tavernEl.appendChild(dv);
+      }
+    }
+
+    function talk(id){
+      const npc = state.npcs[id]; if(!npc) return; // display small dialogue choices
+      log(`<strong>You:</strong> "Hail, ${npc.name}."`);
+      // if vampire, different tone
+      if(npc.flags && npc.flags.cabal){ log(`<em>${npc.name} replies in a measured hush: 'Speak soft, mortal.'</em>`); return; }
+
+      if(id==='maris'){ log('<em>Maris:</em> "Seek the Amber Wreck? A bold soul could find riches."'); log('<button class=\'small\' onclick="offerQuestFromMaris()">Ask for Partnership</button>'); }
+      if(id==='ben'){ log('<em>Old Ben:</em> "Gold lies where greed sleeps. But beware, a false friend is the deadliest."'); }
+      if(id==='syl'){ log('<em>Sylva:</em> "A swift hand and a steady blade — we could ride the tide together."'); }
+      if(id==='lira'){ log('<em>Lira:</em> "I keep my ledger. Aid me, and I aid thee. Betray me, and I bleed thee."'); }
+    }
+
+    function observe(id){ const npc = state.npcs[id]; if(!npc) return; const r = d20(); if(r>10){ log(`Thou observe'st ${npc.name} and learn a tidbit of their past.`); npc.rel += 1; } else { log(`Thy watch is poor; naught gleaned.`); } }
+
+    // Vampires special interactions
+    function inspectVampires(){ log('Thou approach the Quiet Guests. Their skin is cool, their smiles slow. Eldra watches thee.'); const r = d20(); if(r>12){ log('They offer thee a bargain: coin for a secret route to Heart Isle.'); state.player.coins += 0; state.rumors.push('Vampires mention a secret path to Heart Isle'); } else { log('They simply smile and let silence fall.'); } }
+    function ignoreVampires(){ log('Thou decide to leave the Quiet Guests be. The tavern breathes on.'); }
+
+    function startQuietVampires(){ // more detailed encounter
+      if(!state.vampireCabal.present) { log('No one sits there.'); return; }
+      log('A hush settles. Eldra the leader inclines her head. "We do not seek open blood yet. Aid us with a small matter, and we may aid thee."');
+      log('<button class="small" onclick="aidVampires()">Aid them</button> <button class="small" onclick="refuseVamps()">Refuse</button>');
+    }
+
+    function aidVampires(){ log('They request a vial of moon-water from Heart Isle. In return, they promise a whisper that may quell the Leviathan briefly during battle. Accept?'); log('<button class="small" onclick="acceptVampTask()">Accept Quest</button> <button class="small" onclick="declineVampTask()">Decline</button>'); }
+    function refuseVamps(){ log('Eldra nods once. "Then remain as you are." A shadow passes across their faces.'); }
+    function acceptVampTask(){ offerQuest({id:'vamp_task',title:'Moon-Water Errand',desc:'Fetch Moon-Water from Heart Isle for Eldra. Reward: a whispered boon to calm Leviathan and 180 coins.',reward:180,status:'open'}); log('Vampires incline in thanks. Be wary of their price.'); }
+    function declineVampTask(){ log('The Quiet Guests take their silence as a choice. No boon this night.'); }
+
+    // ---------- Actions / Mini-Games (expanded choices) ----------
+    function playCardGame(){ const bet = 20; if(state.player.coins < bet){ log('Thou lack'st the coin to bet.'); return; } state.player.coins -= bet; const player = rand(3,30)+rand(1,13); const npc = rand(1,26)+rand(1,13); log(`Thy hand totals ${player} vs ${npc}.`); if(player>npc){ state.player.coins += bet*2; log('Victory! Thy pockets swell.'); } else if(player<npc){ log('Defeat — the tavern boos thee.'); } else { state.player.coins += bet; log('A tie: thy bet returns.'); } updateUI(); }
+
+    function rollD20(show){ const r=d20(); if(show) log(`<span class='muted'>d20 roll: ${r}</span>`); return r; }
+
+    function pickpocket(){ // more options: target NPC or random patron
+      const possible = Object.values(state.npcs).filter(n=>!n.flags || !n.flags.cabal);
+      if(possible.length===0){ log('No easy pickings nearby.'); return; }
+      const target = possible[rand(0,possible.length-1)];
+      log(`Thou attempt'st to pickpocket ${target.name}.`);
+      const roll = d20() + (state.inventory.includes('Thief Cloak')?3:0);
+      if(roll > 12){ const stolen = rand(5,40); state.player.coins += stolen; log(`Success! Thou pocket ${stolen} coins.`); target.rel -= 1; if(Math.random()<0.25) spreadRumor(target.id, `${target.name} was seen losing coin near the alleys`, false); }
+      else { log('Thou art caught! A brawl ensues.'); state.player.hp -= 12; target.rel -= 2; }
+      updateUI();
+    }
+
+    function duel(){ log('A duel is proposed — choose how to act.'); log('<button class="small" onclick="duelWithBlade()">Use Blade</button><button class="small" onclick="duelWithWit()">Use Wit (persuade)</button>'); }
+    function duelWithBlade(){ const roll = d20() + (state.inventory.includes('Cutlass')?4:0); if(roll>11){ state.player.coins += 25; log('Thou win the duel and claim honor!'); } else { state.player.hp -= 18; log('Thou lose and bleed.'); } updateUI(); }
+    function duelWithWit(){ const roll = d20() + (state.player.rep>0?2:0); if(roll>10){ log('Thy words strike truer than steel; opponent yields.'); state.player.rep += 1; } else { state.player.hp -= 10; log('Mockery fails; a scuffle breaks out.'); } updateUI(); }
+
+    function dance(){ log('Thou dance upon the benches. A risky move.'); const roll = d20(); if(roll>9){ const tip = rand(5,30); state.player.coins += tip; log(`The crowd cheers; thou receive ${tip} coins.`); } else { log('Thy foot slips; naught gained.'); } updateUI(); }
+
+    // ---------- Quests & Outcomes (expanded) ----------
+    function offerQuest(q){ if(!state.quests.find(x=>x.id===q.id)){ q.status='open'; state.quests.push(q); log(`Quest offered: <strong>${q.title}</strong> — ${q.desc} <button class='small' onclick="acceptQuest('${q.id}')">Accept</button>`); renderQuests(); } }
+    function acceptQuest(id){ const q = state.quests.find(x=>x.id===id); if(!q) return; q.status='accepted'; log(`Thou accept'st the quest: ${q.title}`); renderQuests(); }
+
+    function renderQuests(){ questListEl.innerHTML=''; if(state.quests.length===0){ questListEl.innerHTML = '<div class="muted">No quests. Speak with NPCs.</div>'; return; } state.quests.forEach(q=>{ const div = document.createElement('div'); div.className='quest'; div.innerHTML = `<strong>${q.title}</strong> <span class='status'>[${q.status}]</span><div style='opacity:0.9;margin-top:6px'>${q.desc}</div>` + (q.status!=='completed'? `<div style='margin-top:8px'><button class='small' onclick="attemptQuest('${q.id}')">Attempt</button></div>` : ''); questListEl.appendChild(div); }); }
+
+    function attemptQuest(id){ const q = state.quests.find(x=>x.id===id); if(!q) return; log(`Attempting quest: ${q.title}`);
+      if(q.id==='maris_voy' || q.id==='maris_voy'){
+        const r = d20(); if(r>10){ state.player.coins += q.reward; q.status='completed'; log(`Success! Thou claim reward of ${q.reward} coins and tales to tell.`); } else { state.player.hp -= 22; log('Storms and reef — the voyage wounds thee and thou must retreat.'); } renderQuests(); updateUI(); }
+
+      if(q.id==='lira_job'){ const r=d20(); if(r>9){ state.player.coins += q.reward; q.status='completed'; state.npcs.lira.rel += 2; log('Thou filch the trinket and return it; Lira owes thee now.'); } else { state.player.hp -= 16; log('The noble catches thee; flee with wounds.'); } renderQuests(); updateUI(); }
+
+      if(q.id==='vamp_task'){ const r=d20(); if(r>11){ state.player.coins += q.reward; q.status='completed'; log('Thou fetch Moon-Water; Eldra's whisper stirs and the Leviathan will be calmer next encounter.'); } else { state.player.hp -= 20; log('Heart Isle proves dangerous; thou return battered.'); } renderQuests(); updateUI(); }
+    }
+
+    // ---------- Rumor: NPCs spread rumors about each other ----------
+    function listenHeard(){ log('Thou listen'st to the tavern murmur...'); // present top rumors
+      if(state.rumors.length===0) { log('No fresh rumor yet — listen to patrons or wait.'); return; }
+      const r = state.rumors[rand(0,state.rumors.length-1)]; if(typeof r === 'string'){ log(`<em>Heard:</em> "${r}"`); } else { log(`<em>Heard from ${state.npcs[r.from].name}:</em> "${r.text}"`); } }
+
+    // ---------- NPC Rumor Actions (example triggers) ----------
+    function spreadInitialRumors(){ spreadRumor('ben', 'They say the Quiet Guests have ties to old storms', true); spreadRumor('maris', 'Maris was once at the helm when an anchor tore his sister from the deck', true); spreadRumor('lira', 'Lira is seen near the glass-merchant at dusk', false); }
+
+    // ---------- Store & Barter (simple) ----------
+    function openStore(){ log('The Bazaar stalls shimmer — wares available. (Open full Bazaar in main campaign file)'); }
+
+    // ---------- Initialization ----------
+    function init(){ createTavernNPCs(); spreadInitialRumors(); updateUI(); log('Thou step into the Drifting Night — the tavern thrums with gossip and choice. Seek conversation, choose carefully.'); }
+
+    function openMap(){ log('Map: Amber Isle (wreck) — Heart Isle (Leviathan) — Glass Shoals (merchant convoy) — Port Varr.'); }
+    function openLog(){ alert(state.convoLog.join('
+
+')); }
+
+    // Expose some functions globally used in inline buttons
+    window.enterTavern = function(){ renderTavern(); log('Thou enterst the tavern where voices climb like ivy.'); };
+    window.talk = talk; window.observe = observe; window.inspectVampires = inspectVampires; window.ignoreVampires = ignoreVampires; window.startQuietVampires = startQuietVampires; window.offerQuest = offerQuest; window.acceptQuest = acceptQuest; window.attemptQuest = attemptQuest; window.playCardGame = playCardGame; window.rollD20 = rollD20; window.pickpocket = pickpocket; window.duel = duel; window.dance = dance; window.openStore = openStore; window.listenHeard = listenHeard; window.openMap = openMap; window.openLog = openLog;
+
+    window.onload = init;
+
+    // ---------- Additional Helper Notes (for future expansion) ----------
+    // This file intentionally includes many branches, rumor mechanics, and a vampire cabal.
+    // Expandable ideas: persistent save (localStorage), portraits for NPCs, audio cues for vamp encounters,
+    // timed events (full moon), moral alignment tracking, multi-step romance arcs, betrayal consequences centralized.
+
+  </script>
+</body>
+</html>
