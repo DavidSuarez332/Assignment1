@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>D&D + Gwent + Dog-Boy</title>
+  <style>
+    body { background: red; color: white; font-family: sans-serif; }
+    button { margin: 5px; padding: 10px; cursor: pointer; }
+    .dialogue { font-style: italic; margin: 10px 0; }
+    #mainArea { margin-top: 20px; }
+    #goldDisplay { font-weight: bold; }
+    #dice { font-size: 2em; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>⚔️ Dungeons & Dragons Adventure with Gwent 🎴</h1>
+  <div id="goldDisplay">Gold: 100</div>
+  <div id="inventoryDisplay">Inventory: []</div>
+  <div id="dice"></div>
+  <div id="mainArea"></div>
+  
+  <script>
+  // ---------------- STATE ----------------
+  const state = {
+    gold: 100,
+    inventory: [],
+    npcs: [],
+  };
+
+  function updateUI(){
+    document.getElementById("goldDisplay").textContent = "Gold: " + state.gold;
+    document.getElementById("inventoryDisplay").textContent = "Inventory: ["+state.inventory.join(", ")+"]";
+  }
+  function showMessage(msg){
+    const area = document.getElementById("mainArea");
+    area.innerHTML += `<p class="dialogue">${msg}</p>`;
+  }
+
+  // ---------------- Dice ----------------
+  function rollDice(display=true){
+    const roll = Math.ceil(Math.random()*6);
+    if(display){
+      const diceEl = document.getElementById("dice");
+      diceEl.textContent = "🎲 " + roll;
+    }
+    return roll;
+  }
+
+  // ---------------- NPCs ----------------
+  function seedNPCs(){
+    state.npcs.push({ name:"Bronfilo",species:"Elf",dialog:["Bronfilo: Welcome, traveler!"],questions:["Ask about forest","Ask about quests"] });
+    state.npcs.push({ name:"Popke",species:"Orc",dialog:["Popke grunts."],questions:["Ask about strength","Challenge to arm wrestle"] });
+    state.npcs.push({ name:"Thompson",species:"Dwarf",dialog:["Thompson: Got any ale?"],questions:["Share a drink","Ask about mines"] });
+    state.npcs.push({ name:"Davey",species:"Wizard",dialog:["Davey whispers ancient secrets."],questions:["Ask about spells","Ask about danger"] });
+    state.npcs.push({ name:"Hayden",species:"Gargoyle",dialog:["Hayden: I guard the old ruins."],questions:["Ask about ruins","Challenge Hayden"] });
+    state.npcs.push({ name:"Bird-Hag",species:"Succubus",dialog:["Bird-Hag: Mortal, come closer..."],questions:["Flirt","Run away"] });
+    state.npcs.push({ name:"Choopy",species:"Siren",dialog:["Choopy sings eerily."],questions:["Listen","Cover ears"] });
+    seedDogBoy(); // Add Dog-Boy into roster
+  }
+
+  function openNPC(index){
+    const npc = state.npcs[index];
+    const area = document.getElementById("mainArea");
+    area.innerHTML = `<h2>${npc.name} the ${npc.species}</h2><p class="dialogue">${npc.dialog[0]}</p>`;
+    npc.questions.forEach((q,i)=>{
+      area.innerHTML += `<button onclick="npcQuestion(${index},${i})">${q}</button>`;
+    });
+  }
+
+  function npcQuestion(nIndex,qIndex){
+    const npc = state.npcs[nIndex];
+    if(!npc) return;
+
+    // Special case Dog-Boy
+    if(npc.name === "Dog-Boy"){
+      if(qIndex === 0){ openDogBoyGames(); return; }
+      if(qIndex === 1){ gambleDice(); return; }
+      if(qIndex === 2){ haggleButtons(); return; }
+      if(qIndex === 3){ openDogBoyShop(); return; }
+    }
+
+    // Default example interactions
+    if(npc.name==="Bronfilo" && qIndex===0) showMessage("Bronfilo: The forest is alive.");
+    if(npc.name==="Popke" && qIndex===1){
+      const roll = rollDice();
+      showMessage("You arm wrestle Popke. Roll="+roll);
+      if(roll>=4){ state.gold+=10; showMessage("You win! +10 gold"); }
+      else{ state.gold-=5; showMessage("You lose! -5 gold"); }
+      updateUI();
+    }
+  }
+
+  // ---------------- Dog-Boy NPC ----------------
+  function seedDogBoy(){
+    const dogBoy = {
+      name: "Dog-Boy",
+      species: "Shady Canine Merchant",
+      desc: "A scruffy dog-headed man in a greasy suit. Known for rigged games, button-haggling, and crooked deals. Never trust him.",
+      dialog: ["Dog-Boy: Heh heh… Wanna play a game? Or maybe buy some fine buttons?"],
+      questions: ["Play a card game 🎴","Roll dice for 30 coins 🎲","Haggle buttons & cups 🪙","Visit Dog-Boy's shop 🏪"]
+    };
+    state.npcs.push(dogBoy);
+  }
+
+  function openDogBoyGames(){
+    const area = document.getElementById("mainArea");
+    area.innerHTML = `<h2>Dog-Boy's Games</h2>
+      <p class="dialogue">Dog-Boy grins: "Pick yer poison, friend... War, Blackjack, or Guess the Card? Heh heh..."</p>
+      <button onclick="playWar()">War</button>
+      <button onclick="playBlackjack()">Blackjack</button>
+      <button onclick="playGuess()">Guess the Card (K or Q)</button>
+      <button onclick="openNPC(${state.npcs.findIndex(n=>n.name==='Dog-Boy')})">Back</button>`;
+  }
+
+  function playWar(){
+    let player = Math.ceil(Math.random()*13);
+    let dog = Math.ceil(Math.random()*13);
+    if(Math.random()<0.3) dog += 5; // Dog-Boy cheats
+    let msg = `You draw ${player}, Dog-Boy draws ${dog}. `;
+    msg += (player > dog) ? "You win 20 gold!" : "Dog-Boy wins, you lose 15 gold!";
+    if(player > dog) state.gold += 20; else state.gold -= 15;
+    updateUI(); showMessage(msg);
+  }
+
+  function playBlackjack(){
+    let player = Math.floor(Math.random()*11)+12;
+    let dog = Math.floor(Math.random()*11)+12;
+    if(Math.random()<0.4) dog += 5; // Dog-Boy cheats more
+    let msg = `Your score: ${player}. Dog-Boy's score: ${dog}. `;
+    msg += (player >= dog) ? "You scrape a win! +25 gold" : "Dog-Boy smirks… You lose 20 gold.";
+    if(player >= dog) state.gold += 25; else state.gold -= 20;
+    updateUI(); showMessage(msg);
+  }
+
+  function playGuess(){
+    const guess = confirm("Dog-Boy asks: Is it a King? (OK=yes, Cancel=no)");
+    const actual = Math.random()<0.5 ? "K" : "Q";
+    let msg = `The card was ${actual}. `;
+    if((guess && actual==="K")||(!guess && actual==="Q")){
+      state.gold += 15; msg += "You guessed right! +15 gold";
+    } else {
+      state.gold -= 10; msg += "Wrong! Dog-Boy cackles, you lose 10 gold";
+    }
+    updateUI(); showMessage(msg);
+  }
+
+  function gambleDice(){
+    const roll = rollDice(false);
+    let msg = `You rolled ${roll}. `;
+    if(roll >= 4){ state.gold += 30; msg += "Lucky! You gain 30 coins."; }
+    else { state.gold -= 30; msg += "Unlucky! You lose 30 coins."; }
+    updateUI(); showMessage(msg);
+  }
+
+  function haggleButtons(){
+    let base = 10 + Math.floor(Math.random()*10);
+    if(Math.random()<0.5) base += 10; // Dog-Boy raises price unfairly
+    const area = document.getElementById("mainArea");
+    area.innerHTML = `<h2>Dog-Boy's Buttons & Cups</h2>
+      <p class="dialogue">"For you… ${base} gold each! Or maybe more, if I change my mind…"</p>
+      <button onclick="buyItem('Button',${base})">Buy Button</button>
+      <button onclick="buyItem('Cup',${base+5})">Buy Cup</button>
+      <button onclick="openNPC(${state.npcs.findIndex(n=>n.name==='Dog-Boy')})">Back</button>`;
+  }
+
+  function buyItem(name,price){
+    if(state.gold >= price){
+      state.gold -= price;
+      state.inventory.push(name);
+      updateUI();
+      showMessage(`You bought a ${name} for ${price} gold.`);
+    } else {
+      showMessage("Not enough gold! Dog-Boy laughs at your poverty.");
+    }
+  }
+
+  function openDogBoyShop(){
+    const area = document.getElementById("mainArea");
+    area.innerHTML = `<h2>Dog-Boy's Shop 🏪</h2>
+      <p class="dialogue">"Weapons, clothing, war memorabilia… cheap! Well, not cheap for YOU!"</p>
+      <button onclick="buyItem('Rusty Sword',40)">Rusty Sword ⚔️</button>
+      <button onclick="buyItem('Leather Cloak',25)">Leather Cloak 🧥</button>
+      <button onclick="buyItem('Old Helmet',35)">Old Helmet ⛑️</button>
+      <button onclick="buyItem('Medal of Lost Wars',50)">War Medal 🏅</button>
+      <button onclick="openNPC(${state.npcs.findIndex(n=>n.name==='Dog-Boy')})">Back</button>`;
+  }
+
+  // ---------------- Boot ----------------
+  function bootGame(){
+    seedNPCs();
+    updateUI();
+    let npcButtons = state.npcs.map((n,i)=>`<button onclick="openNPC(${i})">${n.name} (${n.species})</button>`).join("");
+    document.getElementById("mainArea").innerHTML = "<h2>Meet the locals</h2>"+npcButtons;
+  }
+  bootGame();
+
+  // Expose
+  window.openNPC = openNPC;
+  window.npcQuestion = npcQuestion;
+  window.playWar = playWar;
+  window.playBlackjack = playBlackjack;
+  window.playGuess = playGuess;
+  window.openDogBoyGames = openDogBoyGames;
+  window.gambleDice = gambleDice;
+  window.haggleButtons = haggleButtons;
+  window.openDogBoyShop = openDogBoyShop;
+  window.buyItem = buyItem;
+  </script>
+</body>
+</html>
