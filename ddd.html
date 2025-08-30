@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Massive DnD + Gwent Game</title>
+  <style>
+    :root{--bg:#ff1f1f;--fg:#ffffff;--accent:#ffe600}
+    html,body{height:100%;margin:0;font-family:Verdana, Geneva, sans-serif;background:var(--bg);color:var(--fg)}
+    .app{padding:16px;display:grid;grid-template-columns:320px 1fr;gap:12px}
+    header{grid-column:1/3;display:flex;align-items:center;gap:12px}
+    h1{margin:0;font-size:20px}
+    .panel{background:rgba(255,255,255,0.03);padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.4)}
+    button{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:700}
+    .big-button{padding:12px 16px;font-size:16px}
+    .npc-list{display:flex;flex-direction:column;gap:8px}
+    .dialogue{white-space:pre-wrap;margin-top:8px}
+
+    /* flashing, emojis, style */
+    .flash{animation:flash 1s infinite}
+    @keyframes flash{0%{filter:brightness(1)}50%{filter:brightness(1.5)}100%{filter:brightness(1)}}
+
+    /* Gwent board */
+    .board{display:grid;grid-template-rows:1fr 1fr;gap:8px}
+    .row{display:flex;gap:8px;justify-content:center}
+    .card{width:120px;height:160px;background:rgba(255,255,255,0.06);border-radius:8px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;cursor:pointer}
+    .card .name{font-weight:800}
+    .card .power{font-size:22px}
+
+    /* dice */
+    .dice{width:80px;height:80px;border-radius:12px;background:#fff;color:#000;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;margin:8px}
+    .dice.animate{animation:roll 0.9s steps(6) }
+    @keyframes roll{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+    /* tavern */
+    .tavern{display:flex;flex-direction:column;gap:8px}
+
+    /* responsive */
+    @media (max-width:800px){.app{grid-template-columns:1fr;}}
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>⚔️ Massive DnD + Gwent World (beta) — Tavern of Laughs 🍺</h1>
+      <div style="margin-left:auto">Background: Bright Red • Text: White • Sounds & Emoji enabled 🎶</div>
+    </header>
+
+    <aside class="panel">
+      <h2>Player</h2>
+      <div id="playerInfo">Name: Adventurer
+      <br/>Gold: <span id="gold">100</span> ✨
+      <br/>HP: <span id="hp">100</span>
+      <br/>Reputation: <span id="rep">Neutral</span>
+      </div>
+
+      <hr>
+      <h3>NPCs (Talk to them)</h3>
+      <div class="npc-list" id="npcList"></div>
+
+      <hr>
+      <h3>Quick Actions</h3>
+      <button onclick="enterTavern()" class="big-button">Enter Tavern 🍺</button>
+      <button onclick="openGwent()" class="big-button">Play Gwent ♠️</button>
+      <button onclick="openQuests()" class="big-button flash">Show Quests 📜</button>
+      <hr>
+      <h3>Dice Roller</h3>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="dice" class="dice">—</div>
+        <button onclick="rollDice(true)">Roll for Damage 🎲</button>
+      </div>
+    </aside>
+
+    <main class="panel">
+      <div id="mainArea">
+        <h2>Welcome</h2>
+        <p class="dialogue">Welcome to our massive DnD world where Gwent is a beloved past-time. Use the left panel to interact with NPCs, open the tavern, or begin quests. The game contains main quests, side quests, mythical NPCs, peasants, a casino, and lots of colorful chaos. Emojis and sounds on each click — enjoy!</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Audio via WebAudio when clicking: simple chime generator -->
+  <script>
+  // ------------------ Game state ------------------
+  const state = {
+    gold: 100,
+    hp: 100,
+    rep: 'Neutral',
+    inventory: [],
+    quests: {main: [], side: []},
+    npcs: [],
+    gwent: {playerDeck:[], npcDeck:[], playerHand:[], npcHand:[], boardPlayer:[], boardNPC:[], turn:'player', goldBet:0},
+  }
+
+  function updateUI(){
+    document.getElementById('gold').innerText = state.gold;
+    document.getElementById('hp').innerText = state.hp;
+    document.getElementById('rep').innerText = state.rep;
+  }
+
+  function clickSound(){ // quick WebAudio chime for every click
+    try{
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 880 + Math.random()*440;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.1, ctx.currentTime+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.14);
+      o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+0.15);
+    }catch(e){/*do nothing*/}
+  }
+
+  // ------------------ NPCs ------------------
+  function seedNPCs(){
+    const npcData = [
+      {name:'Bronfilo',species:'Forest Troll',desc:'A lumbering troll with a surprisingly sharp wit. Loves mushroom stew.',dialog:[
+        'Bronfilo: Who goes there? Are you here to trade or to test strength?'
+      ],questions:['Ask about mushrooms','Trade for lumber','Challenge to arm-wrestle']},
+      {name:'Popke',species:'Will-o'-Wisp',desc:'A floating will-o'-wisp who sings off-key shanties. Often lost.',dialog:['Popke: Hush! My light is fragile.'],questions:['Request a song','Follow the light','Ask about rumors']},
+      {name:'Thompson',species:'Minotaur Bard',desc:'A minotaur who plays lute and writes poems quickly. Surprisingly gentle.',dialog:['Thompson: My poems can lift curses... for a price.'],questions:['Hear a poem','Buy a poem','Ask about old labyrinths']},
+      {name:'Davey',species:'Kitsune Rogue',desc:'Nine-tailed trickster. Likes riddles and shiny objects.',dialog:['Davey: Hehe — shiny things follow me.'],questions:['Riddle me this','Trade tricks','Ask about secrets']},
+      {name:'Hayden',species:'Gargoyle',desc:'Perched stone guardian who loves daytime naps — unusual for gargoyles.',dialog:['Hayden: I prefer pigeons to people.'],questions:['Ask about guard duty','Ask about city secrets','Polish Hayden?']},
+      {name:'Bird-Hag',species:'Succubus',desc:'A mischievous succubus that calls herself Bird-Hag; flirty, dangerous, and oddly fond of tea.',dialog:['Bird-Hag: Care for a sip that causes dreams?'],questions:['Offer tea','Test her charm','Steal the teapot']},
+      {name:'Choopy',species:'Siren',desc:'A siren who prefers opera over luring sailors. Unusually boisterous.',dialog:['Choopy: My waves sing back at me.'],questions:['Request a lullaby','Barter for a song','Ask about the sea']},
+    ];
+    state.npcs = npcData;
+  }
+
+  function renderNPCList(){
+    const container = document.getElementById('npcList');
+    container.innerHTML = '';
+    state.npcs.forEach((n,i)=>{
+      const el = document.createElement('div');
+      el.className = 'panel';
+      el.style.padding='8px';
+      el.innerHTML = `<strong>${n.name}</strong> <em>(${n.species})</em><br/><small>${n.desc}</small>`;
+      const btn = document.createElement('button'); btn.innerText='Talk 💬'; btn.onclick = ()=>{clickSound(); openNPC(i)};
+      el.appendChild(btn);
+      container.appendChild(el);
+    });
+  }
+
+  function openNPC(index){
+    const npc = state.npcs[index];
+    const area = document.getElementById('mainArea');
+    let html = `<h2>${npc.name} — ${npc.species}</h2><p class="dialogue">${npc.dialog[0]}</p>`;
+    html += '<div>'; npc.questions.forEach((q,qi)=>{html+=`<button onclick="npcQuestion(${index},${qi})">${q}</button> `}); html+='</div>';
+    area.innerHTML = html;
+  }
+
+  function npcQuestion(nIndex,qIndex){ clickSound(); const npc = state.npcs[nIndex];
+    const q = npc.questions[qIndex];
+    let response = '';
+    if(q.includes('spit')||q.includes('spit on')){ response = `${npc.name} recoils with annoyance. Reputation goes down.`; state.rep='Suspect'; state.gold=Math.max(0,state.gold-5); }
+    else if(q.toLowerCase().includes('friend')){ response = `${npc.name} warms up. You make a friend. Reputation improves.`; state.rep='Friendly'; state.gold+=2 }
+    else if(q.toLowerCase().includes('ask')||q.toLowerCase().includes('request')){ response = `${npc.name} tells you a short tale: "Once a knight stole a spoon from a dragon and called it pottery."`; }
+    else if(q.toLowerCase().includes('challenge')||q.toLowerCase().includes('arm')){ response = `Challenge! Roll dice to compete.`; rollDice(true); }
+    else{ response = `${npc.name} responds in a way only a mythical being might: *glittery noises*` }
+    const area = document.getElementById('mainArea'); area.innerHTML = `<h2>${npc.name}</h2><p class="dialogue">${response}</p><button onclick="openNPC(${nIndex})">Back</button>`;
+    updateUI();
+  }
+
+  // ------------------ Quests ------------------
+  function seedQuests(){
+    // 5 main quests, 5 side quests minimum
+    state.quests.main = [
+      {id:'m1',title:'The Laughable Duel',desc:'Defend your honor in a duel because someone insulted your hat. Very silly.',reward:50,completed:false},
+      {id:'m2',title:'Dragon with a Cold',desc:'A dragon sneezed and now needs tissues. Help fetch herbs.',reward:120,completed:false},
+      {id:'m3',title:'The Missing Spoon',desc:'Find the spoon stolen from the mayor by a kleptomaniac imp.',reward:80,completed:false},
+      {id:'m4',title:'Gargoyle's Lament',desc:'Help Hayden get a proper sunbath by moving heavy statues.',reward:70,completed:false},
+      {id:'m5',title:'Song of the Siren',desc:'Convince Choopy to stop singing lullabies to the docks (they make sailors dance).',reward:100,completed:false}
+    ];
+    state.quests.side = [
+      {id:'s1',title:'Peasant's Pie',desc:'Bake a pie for the peasants. Choice: spit on pie or hand it over warmly.',reward:10,completed:false},
+      {id:'s2',title:'Coin Flip',desc:'Bet at the olden-styled casino. Win or lose gold.',reward:0,completed:false},
+      {id:'s3',title:'Steal a Feather',desc:'Steal a feather from Bird-Hag (risky, funny)',reward:25,completed:false},
+      {id:'s4',title:'Defend Honor (silly)',desc:'A peasant claims you stole his imaginary cow. Defend your honor!',reward:15,completed:false},
+      {id:'s5',title:'Peasant Parade',desc:'Join the peasants for a parade. Optionally insult them or dance with them.',reward:12,completed:false}
+    ];
+  }
+
+  function openQuests(){ clickSound(); const area = document.getElementById('mainArea');
+    let html = `<h2>Quests</h2><h3>Main Quests</h3><ul>`;
+    state.quests.main.forEach(q=>{html+=`<li><strong>${q.title}</strong> - ${q.desc} <button onclick="startQuest('${q.id}')">Start</button></li>`});
+    html += `</ul><h3>Side Quests</h3><ul>`;
+    state.quests.side.forEach(q=>{html+=`<li><strong>${q.title}</strong> - ${q.desc} <button onclick="startQuest('${q.id}')">Start</button></li>`});
+    html += `</ul>`;
+    area.innerHTML = html;
+  }
+
+  function startQuest(id){ clickSound(); const all = [...state.quests.main,...state.quests.side]; const q = all.find(x=>x.id===id);
+    const area = document.getElementById('mainArea');
+    area.innerHTML = `<h2>${q.title}</h2><p class='dialogue'>${q.desc}</p><div><button onclick="progressQuest('${id}')">Progress</button><button onclick="abandonQuest('${id}')">Abandon</button></div>`;
+  }
+
+  function progressQuest(id){ clickSound(); // simple progression with dice for many quests
+    if(id==='m1'){ // Laughable Duel
+      const dmg = rollDice(false);
+      if(dmg>3){ state.gold += 50; state.rep='Heroic'; finishQuest(id); showMessage('You won the duel with a comedic flourish! Reward: 50 gold.'); }
+      else{ state.hp -= 10; showMessage('You tripped on your hat — you lose 10 HP but win respect for comedy.'); }
+    } else if(id==='s2'){ // Coin Flip / Casino
+      openCasino();
+    } else if(id==='s3'){ // Steal feather
+      const r = Math.random(); if(r>0.6){ state.gold+=25; finishQuest(id); showMessage('You stole a feather! Bird-Hag was annoyed.'); } else { state.hp-=8; showMessage('Caught! Lost 8 HP while escaping.'); }
+    } else if(id==='s1'){ // Peasant's Pie
+      // choice: spit or befriend; present options
+      const area = document.getElementById('mainArea');
+      area.innerHTML = `<h2>Peasant's Pie</h2><p class='dialogue'>Do you spit on the pie or befriend the peasants?</p><button onclick="peasantChoice('spit','s1')">Spit 🤮</button><button onclick="peasantChoice('friend','s1')">Befriend 🤝</button>`;
+      return;
+    } else { // generic
+      const reward = (id.startsWith('m'))?50:12; state.gold+=reward; finishQuest(id); showMessage('Quest progressed and completed! Reward: '+reward+' gold');
+    }
+    updateUI();
+  }
+
+  function finishQuest(id){ const all = [...state.quests.main,...state.quests.side]; const q = all.find(x=>x.id===id); if(q) q.completed=true; }
+  function abandonQuest(id){ showMessage('Quest abandoned.'); }
+
+  function peasantChoice(choice,id){ clickSound(); if(choice==='spit'){ state.rep='Villain'; state.gold-=5; showMessage('You spat on the pies — peasants are offended. Reputation lowered.'); finishQuest(id);} else { state.rep='Beloved'; state.gold+=10; showMessage('You danced with peasants! They gifted you a loaf.'); finishQuest(id);} updateUI(); }
+
+  // ------------------ Tavern & Casino ------------------
+  function enterTavern(){ clickSound(); const area = document.getElementById('mainArea');
+    area.innerHTML = `<h2>Tavern of Laughs 🍺</h2><div class='tavern'><p class='dialogue'>A smoky room of colorful characters. Music plays. You can: play Gwent, bet in the olden-styled casino, chat with patrons, or start a drinking contest.</p><button onclick="openGwent()">Play Gwent vs NPC ♠️</button> <button onclick="openCasino()">Go to Casino 🎰</button> <button onclick="startDrinkingContest()">Drinking Contest 🍻</button></div>`;
+  }
+
+  function openCasino(){ clickSound(); const area = document.getElementById('mainArea');
+    area.innerHTML = `<h2>Olden-styled Casino 🎲</h2><p class='dialogue'>You may bet gold on a coin flip or a dice roll. Enter an amount to bet:</p>
+    <input id='betAmount' type='number' value='10' min='1' style='width:80px'/> <button onclick='placeBet()'>Place Bet</button>`;
+  }
+  function placeBet(){ clickSound(); const amt = Number(document.getElementById('betAmount').value||0); if(amt<=0||amt>state.gold){ showMessage('Invalid bet amount.'); return;} const r = Math.random(); if(r>0.5){ state.gold+=amt; showMessage('You won the bet! Gained '+amt+' gold.'); } else { state.gold-=amt; showMessage('You lost the bet. Lost '+amt+' gold.'); } updateUI(); }
+
+  function startDrinkingContest(){ clickSound(); const dmg = rollDice(false); if(dmg>4){ state.rep='Rowdy'; state.gold+=15; showMessage('You won the drinking contest with a burp! Reward 15 gold.'); } else { state.hp-=10; showMessage('You passed out. Lose 10 HP.'); } updateUI(); }
+
+  // ------------------ Gwent (simplified, lore-flavored) ------------------
+  // Note: This Gwent implementation is inspired by the Witcher card game but simplified for browser play.
+  function openGwent(){ clickSound(); setupGwent(); renderGwent(); }
+
+  function setupGwent(){ // create simple decks with a few Witcher-lore characters
+    // player deck
+    state.gwent.playerDeck = [
+      {id:'g-geralt',name:'Geralt of Rivia',power:10,faction:'Neutral',desc:'The White Wolf. A strong melee card.'},
+      {id:'g-yennefer',name:'Yennefer',power:6,faction:'Sorceress',desc:'Powerful sorcery.'},
+      {id:'g-dandelion',name:'Dandelion',power:3,faction:'Neutral',desc:'Bard, small buff.'},
+      {id:'g-silver',name:'Silver Sword',power:7,faction:'Item',desc:'Weapon card.'}
+    ];
+    // NPC deck (includes Witcher characters too)
+    state.gwent.npcDeck = [
+      {id:'g-ian',name:'Iorveth',power:8,faction:'Skellige',desc:'Rebels at sea.'},
+      {id:'g-emhyr',name:'Emhyr var Emreis',power:9,faction:'Nilfgaard',desc:'Imperial presence.'},
+      {id:'g-yarpen',name:'Yarpen Zigrin',power:4,faction:'Dwarf',desc:'Stalwart dwarf fighter.'},
+    ];
+    // optionally add Witcher characters to cards
+    // shuffle decks
+    state.gwent.playerDeck = shuffle(state.gwent.playerDeck);
+    state.gwent.npcDeck = shuffle(state.gwent.npcDeck);
+    state.gwent.playerHand = state.gwent.playerDeck.slice(0,3);
+    state.gwent.npcHand = state.gwent.npcDeck.slice(0,3);
+    state.gwent.boardPlayer = []; state.gwent.boardNPC = []; state.gwent.turn='player';
+  }
+
+  function renderGwent(){ const area = document.getElementById('mainArea');
+    let html = `<h2>Gwent — Bet Gold: <input id='gwentBet' type='number' value='10' style='width:80px'/> <button onclick='startGwentMatch()'>Start Match</button></h2>`;
+    html += `<div class='board'><div class='row' id='npcRow'></div><div class='row' id='playerRow'></div></div><hr>`;
+    html += `<h3>Your Hand</h3><div id='hand' style='display:flex;gap:8px'></div>`;
+    area.innerHTML = html;
+    renderHand(); renderBoard();
+  }
+
+  function renderHand(){ const h = document.getElementById('hand'); h.innerHTML=''; state.gwent.playerHand.forEach((c,idx)=>{
+      const el = document.createElement('div'); el.className='card'; el.innerHTML = `<div class='name'>${c.name}</div><div class='power'>${c.power}</div><div class='desc'>${c.desc}</div>`;
+      el.onclick = ()=>{clickSound(); playCard(idx)}; h.appendChild(el);
+    });
+  }
+
+  function renderBoard(){ const pr = document.getElementById('playerRow'); const nr = document.getElementById('npcRow'); pr.innerHTML=''; nr.innerHTML='';
+    state.gwent.boardPlayer.forEach(c=>{const el=document.createElement('div');el.className='card';el.innerHTML=`<div class='name'>${c.name}</div><div class='power'>${c.power}</div>`;pr.appendChild(el)});
+    state.gwent.boardNPC.forEach(c=>{const el=document.createElement('div');el.className='card';el.innerHTML=`<div class='name'>${c.name}</div><div class='power'>${c.power}</div>`;nr.appendChild(el)});
+  }
+
+  function playCard(idx){ const c = state.gwent.playerHand.splice(idx,1)[0]; state.gwent.boardPlayer.push(c); renderHand(); renderBoard(); aiPlay(); }
+
+  function aiPlay(){ // NPC plays a random card
+    const c = state.gwent.npcHand.shift(); if(c) state.gwent.boardNPC.push(c); renderBoard(); checkGwentEnd(); }
+
+  function startGwentMatch(){ clickSound(); const bet = Number(document.getElementById('gwentBet').value||0); if(bet<=0||bet>state.gold){ showMessage('Invalid Gwent bet.'); return;} state.gwent.goldBet = bet; showMessage('Gwent match started. Play cards to compete!'); }
+
+  function checkGwentEnd(){ // ends when both hands empty
+    if(state.gwent.playerHand.length===0 && state.gwent.npcHand.length===0){
+      const playerScore = state.gwent.boardPlayer.reduce((s,c)=>s+c.power,0);
+      const npcScore = state.gwent.boardNPC.reduce((s,c)=>s+c.power,0);
+      if(playerScore>=npcScore){ state.gold += state.gwent.goldBet; showMessage('You won Gwent! Gold +' + state.gwent.goldBet); }
+      else { state.gold -= state.gwent.goldBet; showMessage('You lost Gwent. Gold -' + state.gwent.goldBet); }
+      updateUI(); setTimeout(()=>openTavernSummary(playerScore,npcScore),300);
+    }
+  }
+
+  function openTavernSummary(p,n){ const area = document.getElementById('mainArea'); area.innerHTML = `<h2>Gwent Result</h2><p class='dialogue'>Your score: ${p}. NPC score: ${n}.</p><button onclick='enterTavern()'>Back to Tavern</button>` }
+
+  // ------------------ Dice animations & logic ------------------
+  function rollDice(playSound=true){ const d = document.getElementById('dice'); d.classList.add('animate'); d.innerText='...'; if(playSound) clickSound(); const roll = Math.floor(Math.random()*6)+1; setTimeout(()=>{ d.classList.remove('animate'); d.innerText=roll; },900); return roll; }
+
+  // ------------------ Utilities ------------------
+  function showMessage(msg){ const area = document.getElementById('mainArea'); area.innerHTML = `<h2>Message</h2><p class='dialogue'>${msg}</p><button onclick='openQuests()'>Open Quests</button> <button onclick='enterTavern()'>Tavern</button>`; }
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+  // ------------------ Boot strap ------------------
+  seedNPCs(); renderNPCList(); seedQuests(); updateUI();
+
+  // ------------------ Large Flavor Text (locations, weapons, creatures) ------------------
+  // This block intentionally contains many descriptions to be "massive" in detail.
+  const flavor = `
+  Locations:
+  - The Scarlet Alley: A narrow lane lit by lanterns that smell faintly of cinnamon. Merchants hawk magical trinkets, and peasant children race on wooden horses.
+  - The Guttering Harbor: Salt-crusted planks and sea gulls that mime human conversations. Choopy often suns here and hums sea shanties that cause fish to stop.
+  - The Old Casino ("The Golden Turnip"): An olden-styled casino with velvet curtains, wooden slot wheels, and a dealer who hums soft accordion music.
+
+  Weapons & Items:
+  - Silver Sword: Effective versus monsters. Old runes carved along the blade. Humorously has a dent because a dwarf sneezed on it once.
+  - Rusty Dagger: Cheap but handy for comedic stabbings of imaginary cows.
+  - Geralt's Medallion (replica): A faux-medallion that vibrates when socks are mismatched.
+  - Toasted Pie (Peasant Gift): Restores morale with crumbs of kindness.
+
+  Creatures:
+  - Bronfilo the Forest Troll: Eats stones, refuses to pay taxes, bakes excellent mushroom bread.
+  - Popke the Will-o'-Wisp: Occasionally swaps street signs; loves riddles.
+  - Thompson the Minotaur Bard: Writes ballads about laundry day.
+  - Davey the Kitsune Rogue: Collects spoons and whispers rumor into teacups.
+  - Bird-Hag, the Succubus: Sings at midnight and occasionally turns toenails into moonbeams.
+  - Hayden the Gargoyle: Prefers daytime naps and passive aggressive conversations with pigeons.
+  - Choopy the Siren: Trains seagulls to perform synchronized swimming.
+
+  Quests Notes:
+  - Many quests revolve around comedic honor and small stakes. The reasons to defend honor can be silly (someone criticized your hat, someone ate your imaginary sandwich, someone claimed your goat told a joke about you). The game rewards creativity, laughter, and sometimes gold.
+
+  Gameplay decisions:
+  - You can bet gold, lose it, win it, or use it to bribe NPCs.
+  - You can spit on peasants (dishonorable) or befriend them (rewarding). These choices alter reputation and unlock different dialogue.
+
+  This is intentionally verbose and descriptive to create a living, breathing world. Enjoy exploring!`;
+
+  // Make the flavor content accessible via a menu for players who want to read a lot
+  function viewLore(){ const area = document.getElementById('mainArea'); area.innerHTML = `<h2>World Lore</h2><pre class='dialogue'>${flavor}</pre>`; }
+
+  // expose some functions globally for buttons inline
+  window.openNPC = openNPC; window.enterTavern = enterTavern; window.openGwent = openGwent; window.openQuests = openQuests; window.rollDice = rollDice; window.npcQuestion = npcQuestion; window.startQuest = startQuest; window.progressQuest = progressQuest; window.peasantChoice = peasantChoice; window.openCasino = openCasino; window.placeBet = placeBet; window.startDrinkingContest = startDrinkingContest; window.openGwent = openGwent; window.setupGwent = setupGwent; window.renderGwent = renderGwent; window.playCard = playCard; window.startGwentMatch = startGwentMatch; window.viewLore = viewLore;
+  </script>
+</body>
+</html>
