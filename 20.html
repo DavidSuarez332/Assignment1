@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>20 Questions — Which Medieval Rank Are You?</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    /* ---------- A big, flashy medieval-themed style ---------- */
+    :root{
+      --bg:#060b10;
+      --panel: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      --accent:#d4af37;
+      --accent2:#ff6b6b;
+      --soft:#bcd7e6;
+      --glass: rgba(255,255,255,0.03);
+    }
+    html,body{height:100%;margin:0;font-family: 'Georgia', serif;background:
+      radial-gradient(ellipse at 10% 10%, rgba(20,40,60,0.12), transparent 8%),
+      linear-gradient(180deg,#021029 0%, #081d2b 60%); color:var(--soft);}
+    .wrap{max-width:1200px;margin:18px auto;padding:16px;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{margin:0;font-size:28px;color:var(--accent)}
+    p.lead{margin:6px 0 12px;opacity:0.95}
+    .grid{display:grid;grid-template-columns: 1fr 380px; gap:16px}
+    .panel{background:var(--panel);border:1px solid rgba(255,255,255,0.04);padding:14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    .big{font-size:1.05rem}
+    .question-box{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.02)}
+    .options{margin-top:10px;display:grid;grid-template-columns:1fr;gap:8px}
+    .opt{background:linear-gradient(90deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);cursor:pointer;transition:all .18s;display:flex;justify-content:space-between;align-items:center}
+    .opt:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(0,0,0,0.6)}
+    .opt .label{font-weight:700}
+    .opt .emoji{font-size:20px;margin-right:10px}
+    .controls{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+    button{background:var(--accent);border:none;color:#071017;padding:10px 12px;border-radius:8px;font-weight:800;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--soft)}
+    .npc-list{display:flex;flex-direction:column;gap:8px}
+    .npc{padding:8px;border-radius:8px;background:rgba(0,0,0,0.25);display:flex;justify-content:space-between;align-items:center}
+    .npc .m{opacity:0.9}
+    #npc-talk{height:220px;overflow:auto;padding:8px;background:#04151c;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
+    .flash{
+      animation:flash 1.4s infinite;
+    }
+    @keyframes flash{
+      0%{box-shadow:0 0 0 0 rgba(212,175,55,0.6)}
+      50%{box-shadow:0 0 30px 8px rgba(255,107,107,0.06)}
+      100%{box-shadow:0 0 0 0 rgba(212,175,55,0.0)}
+    }
+    .progress{height:10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-top:10px;overflow:hidden}
+    .bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%}
+    .result{font-size:1.1rem;font-weight:800;padding:12px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));}
+    .rank-badge{display:inline-block;padding:6px 10px;border-radius:999px;background:linear-gradient(90deg,var(--accent2),var(--accent));color:#041017;margin-left:8px}
+    .big-screen{display:block}
+    .hint{opacity:0.9;font-size:0.95rem;margin-top:6px}
+    footer{margin-top:16px;text-align:center;opacity:0.85}
+    /* flashy confetti effect placeholder (pure CSS shimmer) */
+    .confetti{position:fixed;left:0;right:0;top:0;bottom:0;pointer-events:none;opacity:0.08;background:
+      radial-gradient(circle at 10% 10%, rgba(255,255,255,0.05), transparent 4%),
+      radial-gradient(circle at 80% 40%, rgba(255,107,107,0.06), transparent 3%),
+      radial-gradient(circle at 40% 70%, rgba(212,175,55,0.04), transparent 2%);}
+    pre{white-space:pre-wrap}
+  </style>
+</head>
+<body>
+  <div class="confetti"></div>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>🛡️ 20 Questions — Which Medieval Rank Are You?</h1>
+        <p class="lead big">Answer 20 immersive medieval dilemmas — with creatures, Skyrim/Witcher vibes, and NPCs — to discover your place in the realm.</p>
+      </div>
+      <div>
+        <div style="text-align:right">
+          <div class="muted">Flashing colors & emojis for medieval flair ✨</div>
+          <div style="margin-top:8px"><button onclick="resetQuiz()" class="ghost">🔄 Reset Quiz</button></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid" style="margin-top:12px">
+      <main class="panel">
+        <div class="question-box" id="question-box">
+          <div id="q-header" style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:0.9rem;color:var(--accent2)">Question <span id="q-num">1</span> / 20</div>
+              <h2 id="q-text" style="margin:6px 0 0;font-size:20px">Loading question...</h2>
+              <div class="hint muted" id="q-sub">Think like a medieval leader or monster-hunter.</div>
+            </div>
+            <div style="min-width:200px;text-align:right">
+              <div class="progress"><div class="bar" id="progress-bar"></div></div>
+              <div style="margin-top:8px"><button id="saveBtn" class="ghost" onclick="saveProgress()">💾 Save</button></div>
+            </div>
+          </div>
+
+          <div class="options" id="options"></div>
+
+          <div class="controls">
+            <button onclick="prevQuestion()" id="prevBtn" class="ghost">⬅️ Previous</button>
+            <button onclick="nextQuestion()" id="nextBtn">➡️ Next</button>
+            <button onclick="submitQuiz()" id="submitBtn" style="background:linear-gradient(90deg,var(--accent2),var(--accent));">🏁 Finish Quiz</button>
+          </div>
+        </div>
+
+        <section style="margin-top:12px" id="explain-area">
+          <div class="muted">At the end you'll be placed in the medieval social ranking (from "poor mud peasant serf" up to "God of Gods").</div>
+        </section>
+
+      </main>
+
+      <aside class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 style="margin:0">NPCs & Side Characters</h3>
+          <div class="muted">They comment on your choices</div>
+        </div>
+
+        <div class="npc-list" style="margin-top:10px">
+          <!-- NPC entries -->
+          <div class="npc"><div><strong>Thompson</strong> <span style="font-size:12px;color:#b5d6e0"> (Orc)</span><div class="m">Loud, blunt, loyal.</div></div><div><button class="small" onclick="speakNpc('thompson')">Talk</button></div></div>
+
+          <div class="npc"><div><strong>David</strong> <span style="font-size:12px;color:#b5d6e0">(Half-bard/merchant)</span><div class="m">Clever, silver-tongued.</div></div><div><button class="small" onclick="speakNpc('david')">Talk</button></div></div>
+
+          <div class="npc"><div><strong>Bronfelo</strong> <span style="font-size:12px;color:#b5d6e0">(Quadruped tracker)</span><div class="m">Silent feet, keen nose.</div></div><div><button class="small" onclick="speakNpc('bronfelo')">Talk</button></div></div>
+
+          <div class="npc"><div><strong>Popke</strong> <span style="font-size:12px;color:#b5d6e0">(Gremlin)</span><div class="m">Mischief maker.</div></div><div><button class="small" onclick="speakNpc('popke')">Talk</button></div></div>
+
+          <div class="npc"><div><strong>Hayden</strong> <span style="font-size:12px;color:#b5d6e0">(Gremlin)</span><div class="m">Shy, genius tinker.</div></div><div><button class="small" onclick="speakNpc('hayden')">Talk</button></div></div>
+
+          <div class="npc"><div><strong>Eldra</strong> <span style="font-size:12px;color:#b5d6e0">(Vampire - Quiet)</span><div class="m">Calm, ancient.</div></div><div><button class="small" onclick="speakNpc('eldra')">Talk</button></div></div>
+
+          <div class="npc"><div><strong>Cassandra</strong> <span style="font-size:12px;color:#b5d6e0">(Witcher-influenced monster-hunter)</span><div class="m">Stoic, practiced.</div></div><div><button class="small" onclick="speakNpc('cassandra')">Talk</button></div></div>
+
+          <div class="npc"><div><strong>Rikard</strong> <span style="font-size:12px;color:#b5d6e0">(Old Priest)</span><div class="m">Pious, watchful.</div></div><div><button class="small" onclick="speakNpc('rikard')">Talk</button></div></div>
+
+          <div class="npc"><div><strong>Many More...</strong><div class="m">A bustling tavern of characters.</div></div><div><button class="small" onclick="speakNpc('more')">Hear More</button></div></div>
+        </div>
+
+        <h4 style="margin-top:12px">NPC Talk</h4>
+        <div id="npc-talk">The patrons murmur. NPCs will react to your choices as you proceed.</div>
+
+        <div style="margin-top:10px">
+          <div style="font-weight:800;margin-bottom:6px">Quick Stats</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div style="background:#081d25;padding:6px 8px;border-radius:8px">Military: <span id="stat-mil">0</span></div>
+            <div style="background:#082014;padding:6px 8px;border-radius:8px">Magic: <span id="stat-mag">0</span></div>
+            <div style="background:#10161a;padding:6px 8px;border-radius:8px">Stealth: <span id="stat-ste">0</span></div>
+            <div style="background:#09131a;padding:6px 8px;border-radius:8px">Piety: <span id="stat-pie">0</span></div>
+            <div style="background:#0a1b22;padding:6px 8px;border-radius:8px">Wealth: <span id="stat-wei">0</span></div>
+            <div style="background:#0b1420;padding:6px 8px;border-radius:8px">Charisma: <span id="stat-cha">0</span></div>
+            <div style="background:#071219;padding:6px 8px;border-radius:8px">Craft: <span id="stat-craft">0</span></div>
+          </div>
+        </div>
+
+      </aside>
+    </div>
+
+    <footer class="muted">Made with medieval mischief & mythic might — echoes of Skyrim and Witcher style. 🐉🗡️</footer>
+  </div>
+
+  <script>
+    /*************************************************************************
+     * 20 Questions Medieval Placement Quiz
+     * - 20 questions, each with 6 choices
+     * - Each option adds deltas to attributes:
+     *     military, magic, stealth, piety, wealth, charisma, craft
+     * - NPCs react to certain types of answers
+     * - Final placement is computed after all answers
+     *************************************************************************/
+
+    // ---------- Data structures ----------
+    const RANKS = [
+      "poor mud peasant serf",
+      "mud beggar",
+      "withering prisoner",
+      "basket weaver",
+      "unsuccessful baker",
+      "decent farmer",
+      "good brewer",
+      "bad jester",
+      "humble blacksmith",
+      "self-taught warrior",
+      "in-training warrior",
+      "grunt soilder",
+      "good archer",
+      "noble guardsman",
+      "excited adventurer",
+      "respected solider",
+      "untrustworthy priest",
+      "respected knight",
+      "Top Baron",
+      "Your Royal Viscount",
+      "Your Excellence Count/Earl",
+      "The Marquess of Jupiteronia",
+      "Duke of Dublahbangbang",
+      "Prince Henry",
+      "Queen",
+      "King",
+      "King of Kings",
+      "God",
+      "God of Gods"
+    ];
+
+    // NPCs and their dynamic 'relationship' and lines
+    const NPCS = {
+      thompson: { name: "Thompson (Orc)", rel: 0, lines: [] },
+      david: { name: "David (Half-bard)", rel: 0, lines: [] },
+      bronfelo: { name: "Bronfelo (Quadruped)", rel: 0, lines: [] },
+      popke: { name: "Popke (Gremlin)", rel: 0, lines: [] },
+      hayden: { name: "Hayden (Gremlin)", rel: 0, lines: [] },
+      eldra: { name: "Eldra (Vampire)", rel: 0, lines: [] },
+      cassandra: { name: "Cassandra (Monster-Hunter)", rel: 0, lines: [] },
+      rikard: { name: "Rikard (Old Priest)", rel: 0, lines: [] },
+      more: { name: "Many More", rel: 0, lines: [] }
+    };
+
+    // quiz state
+    let state = {
+      index: 0,
+      answers: Array(20).fill(null),
+      attr: { military:0, magic:0, stealth:0, piety:0, wealth:0, charisma:0, craft:0 }
+    };
+
+    // generate/define 20 questions with 6 choices each
+    // each option contains: text, emoji, deltas (attr changes), npcReacts (optional)
+    const QUESTIONS = [
+      {
+        q: "An army approaches your kingdom's border. How would you defend the invasion?",
+        sub: "Consider walls, diplomacy, monsters, or guerrilla tactics.",
+        opts: [
+          { text: "Muster the knights, hold the line with heavy cavalry ⚔️", delta:{military:3,wealth:-1}, react:{thompson:+1} },
+          { text: "Set traps in the hills and ambush — guerrilla warfare 🪓", delta:{stealth:3,military:1}, react:{bronfelo:+1} },
+          { text: "Call upon mages to conjure storms and barriers ⚡", delta:{magic:4, piety:-1}, react:{cassandra:+1} },
+          { text: "Send envoys to negotiate and bribe the generals 💰", delta:{charisma:2,wealth:-2}, react:{david:+1} },
+          { text: "Sacrifice offerings to the old gods to turn the tide 🕯️", delta:{piety:3,magic:1}, react:{rikard:+1} },
+          { text: "Escape to floating isles and hire mercenaries later 🛶", delta:{wealth:-1,military:1,stealth:1}, react:{more:+1} }
+        ]
+      },
+      {
+        q: "What defense mechanism would you prefer for your castle?",
+        sub: "Choose between conventional, magical, or monstrous.",
+        opts: [
+          { text: "A dragon-scale curtain wall and heavy ballistae 🐉", delta:{military:3,wealth:-2}, react:{thompson:+1} },
+          { text: "A network of hidden tunnels for counterstrikes ⛏️", delta:{stealth:2,craft:1}, react:{bronfelo:+1} },
+          { text: "A magical rune-field that repels beasts ✨", delta:{magic:3,piety:-1}, react:{eldra:+1} },
+          { text: "Wards against necromancy and vampire crossing 🛡️", delta:{piety:2,magic:1}, react:{rikard:+1} },
+          { text: "Hire witchers/monster hunters for patrols 🗡️", delta:{military:2,craft:1}, react:{cassandra:+1} },
+          { text: "Flood the moat with enchanted eels — unsavory but effective 🐍", delta:{wealth:-1,craft:2}, react:{popke:+1} }
+        ]
+      },
+      {
+        q: "How do you handle politics between other kingdoms?",
+        sub: "Diplomacy, subterfuge, war, or trade?",
+        opts: [
+          { text: "Cement alliances through marriage and ceremony 👑", delta:{charisma:3,wealth:-1}, react:{david:+2} },
+          { text: "Spy, bribe, and blackmail for advantage 🕵️", delta:{stealth:3,charisma:1}, react:{popke:+1} },
+          { text: "Call for a grand tournament; win hearts and impress nobles 🏇", delta:{charisma:2,military:1}, react:{thompson:+1} },
+          { text: "Forge trade pacts and guild monopolies to buy favor 💰", delta:{wealth:3,craft:1}, react:{bronfelo:+1} },
+          { text: "Subdue smaller realms methodically to expand influence ⚔️", delta:{military:3,wealth:1}, react:{cassandra:+1} },
+          { text: "Use clergy and holy edicts to influence rulers 🕯️", delta:{piety:3, charism a:0||0}, react:{rikard:+1} } // harmless placeholder: will not break
+      },
+      {
+        q: "A mysterious plague sweeps from the west. What is your plan?",
+        sub: "Public health, quarantine, cures, or cruelties?",
+        opts: [
+          { text: "Establish quarantine and healers — public clinics 🏥", delta:{piety:1,craft:2,wealth:-1}, react:{rikard:+1} },
+          { text: "Burn infected hamlets to stop spread — ruthless but fast 🔥", delta:{military:2,wealth:1}, react:{thompson:-1} },
+          { text: "Seek arcane cures in forbidden tomes (risky magic) 📜", delta:{magic:3,piety:-2}, react:{eldra:+1} },
+          { text: "Organize brigades of healers and ale-brewers to strengthen folk 🍺", delta:{craft:2,wealth:-1, piety:1}, react:{david:+1} },
+          { text: "Close borders and pray for mercy — faith and isolation ⛪", delta:{piety:3}, react:{rikard:+2} },
+          { text: "Send scouts for the source, test and adapt — pragmatic science 🔬", delta:{craft:3,stealth:1}, react:{bronfelo:+1} }
+        ]
+      },
+      {
+        q: "You've heard tales of a wandering vampire in the kingdom — what will you do?",
+        sub: "Confront, recruit, ignore, or research?",
+        opts: [
+          { text: "Hunt it with silver and stakes — direct, violent ⚔️", delta:{military:2,craft:1}, react:{cassandra:+2} },
+          { text: "Try to bargain with it — offer secrets or service 🦇", delta:{charisma:2,wealth:2}, react:{eldra:+1} },
+          { text: "Seal churches and raise wards — pious defense ✝️", delta:{piety:3}, react:{rikard:+1} },
+          { text: "Study vampire lore and create counter-magic 📚", delta:{magic:3,craft:1}, react:{david:+1} },
+          { text: "Ignore it; superstition breeds fear — pragmatic shrug 🤷", delta:{charisma:-1,stealth:1}, react:{popke:-1} },
+          { text: "Enlist monster-hunters and pay their price 🗡️", delta:{wealth:-1,military:2}, react:{cassandra:+1} }
+        ]
+      },
+      {
+        q: "You see a peasant begging for bread — what do you do?",
+        sub: "Charity, suspicion, steal from the rich, or teach?",
+        opts: [
+          { text: "Give bread and coin, show mercy 🥖", delta:{piety:2,wealth:-1,charisma:1}, react:{rikard:+1} },
+          { text: "Teach them a craft to become self-reliant 🧵", delta:{craft:2,charisma:1}, react:{bronfelo:+1} },
+          { text: "Ignore — charity breeds dependency 😶", delta:{piety:-1,charisma:-1}, react:{thompson:-1} },
+          { text: "Hire them for small work — practical support ⚒️", delta:{wealth:-1,craft:1,charisma:1}, react:{david:+1} },
+          { text: "Interrogate; thievery can mask worse crimes 🕵️", delta:{stealth:1,military:1}, react:{popke:+1} },
+          { text: "Give them a jest — humour lifts spirits 🤡", delta:{charisma:2}, react:{more:+1} }
+        ]
+      },
+      {
+        q: "What kind of magic should be forbidden in the kingdom?",
+        sub: "Consider the dangers of necromancy, blood magic, mind-control, etc.",
+        opts: [
+          { text: "Necromancy — it upends death and order ⚰️", delta:{piety:2,magic:-2}, react:{rikard:+1} },
+          { text: "Blood magic — corrupts both caster and realm 🩸", delta:{piety:2,magic:-1}, react:{eldra:-1} },
+          { text: "Mind-control spells — remove free will 🧠", delta:{charisma:2,stealth:0}, react:{david:+1} },
+          { text: "Weather-warping rituals — destabilize harvests ⛈️", delta:{craft:1,magic:-1}, react:{bronfelo:+1} },
+          { text: "Enchanting items that enslave creatures 🔗", delta:{piety:1,craft:-1}, react:{cassandra:+1} },
+          { text: "No magic banned — knowledge is power 📖", delta:{magic:2,charisma:1}, react:{popke:+1} }
+        ]
+      },
+      {
+        q: "A neighboring lord insults your lineage publicly. What is your response?",
+        sub: "Honor, challenge, ignore, or smear their name?",
+        opts: [
+          { text: "Issue a formal challenge to single combat ⚜️", delta:{military:2,charisma:1}, react:{thompson:+1} },
+          { text: "Start a whisper-campaign to weaken their alliances 🗣️", delta:{stealth:2,charisma:1}, react:{popke:+1} },
+          { text: "File a complaint with the monarch — lawful recourse 📜", delta:{piety:1,charisma:1}, react:{rikard:+1} },
+          { text: "Spend gold to throw a grand feast that outshines them 🎉", delta:{wealth:-2,charisma:2}, react:{david:+1} },
+          { text: "Accept the slight; reputation builds in patience 🧘", delta:{charisma:1,piety:1}, react:{bronfelo:+1} },
+          { text: "Kidnap a minor vassal to send a message — cruel but decisive 🗡️", delta:{stealth:1,military:2}, react:{cassandra:-1} }
+        ]
+      },
+      {
+        q: "Which mythical creature would you prefer as an ally in war or politics?",
+        sub: "Each grants unique advantages and liabilities.",
+        opts: [
+          { text: "A wyvern — terror from above 🐲", delta:{military:3,wealth:-1}, react:{thompson:+1} },
+          { text: "A dryad — influence over forests 🌳", delta:{craft:2,piety:1}, react:{more:+1} },
+          { text: "A wraith — whisper-spy of the night 👻", delta:{stealth:3,magic:1}, react:{popke:+1} },
+          { text: "A sea-serpent — command of the coast 🐍", delta:{military:2,wealth:1}, react:{bronfelo:+1} },
+          { text: "A golem — dependable fortress guard 🪨", delta:{military:2,craft:2}, react:{david:+1} },
+          { text: "No creatures; rely on people and laws ⚖️", delta:{charisma:2,piety:1}, react:{rikard:+1} }
+        ]
+      },
+      {
+        q: "You find an ancient relic rumored to be 'Dragonborn's Sigil' (Skyrim echo). What do you do?",
+        sub: "Power, study, sell, or hide it?",
+        opts: [
+          { text: "Wear it and test the power — assume destiny 🐉", delta:{military:2,magic:2}, react:{thompson:+1} },
+          { text: "Sell to the highest bidder for coin 💰", delta:{wealth:3,craft:0}, react:{david:+1} },
+          { text: "Give it to the monastery for safekeeping ⛪", delta:{piety:2,magic:-1}, react:{rikard:+1} },
+          { text: "Research it quietly — knowledge first 📚", delta:{craft:2,magic:1}, react:{cassandra:+1} },
+          { text: "Bury it — too dangerous to wield ⚰️", delta:{piety:1,stealth:1}, react:{bronfelo:+1} },
+          { text: "Use it to call beasts in battle — primal strategy 🐺", delta:{military:2,wealth:-1}, react:{popke:+1} }
+        ]
+      },
+      {
+        q: "A guild of mages asks to build a tower inside your domain. Ye?",
+        sub: "Control, regulation, embrace, or ban?",
+        opts: [
+          { text: "Permit it but regulate strictly — keep power in check 🏛️", delta:{piety:1,magic:2,craft:1}, react:{rikard:+1} },
+          { text: "Grand celebration — the tower will be a pride of the realm 🎇", delta:{charisma:2,wealth:-1}, react:{david:+1} },
+          { text: "Deny them; mages invite chaos 🔒", delta:{piety:1,magic:-2}, react:{eldra:-1} },
+          { text: "Seize the tower for military advantage 🏰", delta:{military:2,craft:1}, react:{thompson:+1} },
+          { text: "Allow the tower if they share knowledge publicly 📚", delta:{craft:2,magic:1}, react:{cassandra:+1} },
+          { text: "Use the tower for research into controlling monsters 🧪", delta:{craft:2,wealth:-1}, react:{bronfelo:+1} }
+        ]
+      },
+      {
+        q: "A famous adventurer offers you a rare map — but for a price. Will you:",
+        sub: "Risk coin, trust, or make alternate deals?",
+        opts: [
+          { text: "Buy the map outright; a sure path to treasure 💎", delta:{wealth:-2,craft:2}, react:{david:+1} },
+          { text: "Offer to join the adventurer on an equal share 🧭", delta:{military:1,charisma:2}, react:{cassandra:+1} },
+          { text: "Steal the map while they sleep — risky theft 🕶️", delta:{stealth:3,craft:1}, react:{popke:+1} },
+          { text: "Forge a fake map to trick them and take their price 🖋️", delta:{craft:3,stealth:1}, react:{hayden:+1} },
+          { text: "Decline; maps are lies without skill 📜", delta:{charisma:-1,craft:1}, react:{bronfelo:+1} },
+          { text: "Borrow it for study, return it with payment later 🤝", delta:{charisma:1,wealth:-1}, react:{david:+1} }
+        ]
+      },
+      {
+        q: "A mob wants justice for a corrupt tax collector. How do you act?",
+        sub: "Mercy, punishment, show trial, or appeasement?",
+        opts: [
+          { text: "Order a public trial and impartial judgment ⚖️", delta:{piety:1,charisma:2}, react:{rikard:+1} },
+          { text: "Bribe the mob away — pragmatic governance 💵", delta:{wealth:-2,charisma:1}, react:{david:+1} },
+          { text: "Let them vent; a public execution to cleanse anger 🔥", delta:{military:1,piety:-2}, react:{thompson:-1} },
+          { text: "Replace the collector and reform the system 🛠️", delta:{craft:2,charisma:1}, react:{bronfelo:+1} },
+          { text: "Investigate the collector's books first — procedure 📚", delta:{craft:2,stealth:1}, react:{hayden:+1} },
+          { text: "Silence the mob with a show of force — order above all 🛡️", delta:{military:2,charisma:-1}, react:{cassandra:-1} }
+        ]
+      },
+      {
+        q: "A witcher-like bounty: a wendigo haunts a valley. You're the lord — what is the policy?",
+        sub: "Contracts, hunts, or pacification?",
+        opts: [
+          { text: "Offer coin to hunters and witchers to slay it 🗡️", delta:{wealth:-1,military:2}, react:{cassandra:+2} },
+          { text: "Offer sanctuary and study it — monstrous research 🧪", delta:{craft:3,magic:1}, react:{david:+1} },
+          { text: "Poison bait and trap it — cunning strategy 🪤", delta:{stealth:2,craft:1}, react:{popke:+1} },
+          { text: "Seal the valley and abandon those within — hard choice 😶", delta:{piety:-1,military:1}, react:{rikard:-1} },
+          { text: "Banish with holy rites and ward the land ✝️", delta:{piety:3}, react:{rikard:+1} },
+          { text: "Attempt to tame or bind it to serve the realm 🐺", delta:{magic:2,craft:1}, react:{eldra:+1} }
+        ]
+      },
+      {
+        q: "A foreign mage offers mind-reading services during council. Do you allow it?",
+        sub: "Security vs. freedom.",
+        opts: [
+          { text: "Allow; ensure council decisions are honest 🔍", delta:{magic:1,charisma:-1}, react:{david:-1} },
+          { text: "Ban mind magic — privacy is sacred 🧠", delta:{piety:2,magic:-1}, react:{rikard:+1} },
+          { text: "Allow only under oath and with oversight 📜", delta:{craft:1,charisma:1}, react:{more:+1} },
+          { text: "Use mind readers secretly to root out traitors 🕵️", delta:{stealth:2,magic:1}, react:{popke:+1} },
+          { text: "Hire a trusted witcher to verify and support decisions 🗡️", delta:{military:1,craft:1}, react:{cassandra:+1} },
+          { text: "Refuse everything to avoid slippery slopes 🙅", delta:{charisma:-1,piety:1}, react:{bronfelo:+1} }
+        ]
+      },
+      {
+        q: "What is your approach to festivals and public morale?",
+        sub: "Bread & circuses, solemn prayers, tournaments, or education?",
+        opts: [
+          { text: "Tournaments and feats to inspire valor 🏇", delta:{charisma:2,military:1}, react:{thompson:+1} },
+          { text: "Religious festivals to bind people in faith ⛪", delta:{piety:3}, react:{rikard:+2} },
+          { text: "Craft fairs and guild markets to boost craft & wealth 🛍️", delta:{craft:2,wealth:1}, react:{bronfelo:+1} },
+          { text: "Secretive mage displays to keep wonder alive ✨", delta:{magic:2,charisma:1}, react:{eldra:+1} },
+          { text: "Street jesters & music to keep spirits high 🤡", delta:{charisma:2,wealth:-1}, react:{david:+1} },
+          { text: "Minimal festivals; work builds real prosperity ⚒️", delta:{craft:1,wealth:1}, react:{more:+1} }
+        ]
+      },
+      {
+        q: "You discover a cabal of thieves with noble ties — how do you proceed?",
+        sub: "Justice, blackmail, alliance, or purge?",
+        opts: [
+          { text: "Expose them publicly; justice above nobility ⚖️", delta:{piety:1,charisma:1}, react:{rikard:+1} },
+          { text: "Blackmail for information and use them as assets 🕴️", delta:{stealth:2,wealth:1}, react:{popke:+1} },
+          { text: "Co-opt them into official spy networks 🕵️", delta:{stealth:2,military:1}, react:{david:+1} },
+          { text: "Purge harshly to set an example 🔥", delta:{military:2,piety:-2}, react:{thompson:-1} },
+          { text: "Negotiate a peace that reforms tax collectors 🛡️", delta:{charisma:2,craft:1}, react:{bronfelo:+1} },
+          { text: "Ignore; politics with nobles is too dangerous 🤐", delta:{charisma:-1,wealth:1}, react:{more:-1} }
+        ]
+      },
+      {
+        q: "Which 'forbidden' knowledge appeals to you most?",
+        sub: "Ancient runes, grimoires, sky-sailing secrets, or beast-binding?",
+        opts: [
+          { text: "Grimoires of blood and binding — power at cost 🩸", delta:{magic:3,piety:-2}, react:{eldra:+1} },
+          { text: "Runes of storms and dragons — command weather ⚡", delta:{magic:2,military:1}, react:{thompson:+1} },
+          { text: "Engineering of floating anchors — mastery of isles ⚙️", delta:{craft:3,wealth:1}, react:{bronfelo:+1} },
+          { text: "Secrets to charm nobles — influence is knowledge 🗣️", delta:{charisma:3,stealth:1}, react:{david:+1} },
+          { text: "Herbal cures and brewing lost to time 🍶", delta:{craft:2,piety:1}, react:{more:+1} },
+          { text: "Bestial lore to bind monsters — moral grey 🐺", delta:{military:1,magic:1}, react:{cassandra:+1} }
+        ]
+      },
+      {
+        q: "A merchant offers you a choice: large coin now, or knowledge that could make coin for generations. Choose:",
+        sub: "Immediate wealth vs. long-term influence.",
+        opts: [
+          { text: "Take coin and live richly today 💷", delta:{wealth:3,charisma:-1}, react:{david:+1} },
+          { text: "Buy knowledge — invest in trade secrets 📘", delta:{craft:3,wealth:-2}, react:{bronfelo:+1} },
+          { text: "Share coin with the guild; mutual growth 🤝", delta:{charisma:2,wealth:-1}, react:{more:+1} },
+          { text: "Refuse both; distrust merchants 😶", delta:{charisma:-1,craft:1}, react:{popke:-1} },
+          { text: "Leverage the coin and knowledge together — cunning plan 🧠", delta:{charisma:1,craft:2,wealth:-1}, react:{david:+1} },
+          { text: "Steal both when merchant sleeps — greedy but risky 🕶️", delta:{stealth:3,wealth:2}, react:{popke:+2} }
+        ]
+      },
+      {
+        q: "Choose your moral code regarding rituals that require sacrifice:",
+        sub: "Absolute taboo, conditional, or useful tool?",
+        opts: [
+          { text: "Absolute taboo; never sacrifice a life ⚖️", delta:{piety:3,charisma:1}, react:{rikard:+2} },
+          { text: "Conditional — only volunteers in dire need 🙏", delta:{piety:1,charisma:1}, react:{more:+1} },
+          { text: "Utilitarian — sacrifice for the greater good 🧭", delta:{military:1,piety:-1}, react:{thompson:-1} },
+          { text: "Occultist — ritual power can save many 🕯️", delta:{magic:2,piety:-2}, react:{eldra:+1} },
+          { text: "Scientific alternative — search for other options 🔬", delta:{craft:3,magic:-1}, react:{bronfelo:+1} },
+          { text: "Ignore ritual culture; rely on law and order 🏛️", delta:{charisma:1,craft:1}, react:{david:+1} }
+        ]
+      },
+      {
+        q: "A young dragon is sighted near the isles. What's your policy?",
+        sub: "Kill, tame, appease, or lure away?",
+        opts: [
+          { text: "Tame and bind it to your house — majestic asset 🐲", delta:{military:3,charisma:1}, react:{thompson:+1} },
+          { text: "Slay it to prove bravery and secure its hoard ⚔️", delta:{military:2,wealth:2}, react:{cassandra:+1} },
+          { text: "Appease with offerings, avoid bloodshed 🕯️", delta:{piety:2,wealth:-1}, react:{rikard:+1} },
+          { text: "Drive it away with storms and magic ⚡", delta:{magic:2,craft:1}, react:{eldra:+1} },
+          { text: "Study and document — knowledge before loot 📚", delta:{craft:2,magic:1}, react:{more:+1} },
+          { text: "Hire a merchant to distract it with trade goods 🚢", delta:{wealth:-2,charisma:1}, react:{david:+1} }
+        ]
+      },
+      {
+        q: "How would you deal with witchcraft accused of aiding rebels?",
+        sub: "Trial, exile, execution, or reintegration?",
+        opts: [
+          { text: "Fair trial by peers — justice is the anchor ⚖️", delta:{piety:1,charisma:2}, react:{rikard:+1} },
+          { text: "Burn as a warning — make example 🔥", delta:{piety:-2,military:2}, react:{thompson:-1} },
+          { text: "Exile and monitor — remove influence 👣", delta:{stealth:1,craft:1}, react:{popke:+1} },
+          { text: "Recruit them; use their magic for the realm 🧙", delta:{magic:3,wealth:1}, react:{eldra:+1} },
+          { text: "Appoint a special council of scholars to investigate 📜", delta:{craft:2,charisma:1}, react:{david:+1} },
+          { text: "Let the village decide — local autonomy 🏘️", delta:{charisma:1,piety:1}, react:{bronfelo:+1} }
+        ]
+      },
+      {
+        q: "Final strategic choice: if you had to pick one key virtue to govern by, which?",
+        sub: "This guides long-term rule and shapes your rank.",
+        opts: [
+          { text: "Honor — uphold history and oaths ⚜️", delta:{charisma:3,piety:1}, react:{thompson:+1} },
+          { text: "Prudence — measured and slow decisions 🧭", delta:{craft:3,charisma:1}, react:{david:+1} },
+          { text: "Courage — bold acts and valor 🗡️", delta:{military:3}, react:{cassandra:+1} },
+          { text: "Compassion — care for subjects' lives ❤️", delta:{piety:2,charisma:1}, react:{rikard:+1} },
+          { text: "Ingenuity — build, invent, craft ⚙️", delta:{craft:3,wealth:1}, react:{hayden:+1} },
+          { text: "Liberty — freedom from enforced faith and orders 🕊️", delta:{charisma:2,stealth:1}, react:{more:+1} }
+        ]
+      }
+    ];
+
+    // make sure there are 20 questions; if fewer, duplicate some with altered text
+    while (QUESTIONS.length < 20) {
+      QUESTIONS.push(JSON.parse(JSON.stringify(QUESTIONS[QUESTIONS.length % 10])));
+    }
+    QUESTIONS.length = 20; // exactly 20
+
+    // ---------- UI binding ----------
+    const qNumEl = document.getElementById('q-num');
+    const qTextEl = document.getElementById('q-text');
+    const qSubEl = document.getElementById('q-sub');
+    const optionsEl = document.getElementById('options');
+    const progressBar = document.getElementById('progress-bar');
+
+    // show current question
+    function renderQuestion(i = state.index) {
+      const q = QUESTIONS[i];
+      qNumEl.textContent = i + 1;
+      qTextEl.textContent = q.q;
+      qSubEl.textContent = q.sub || '';
+      optionsEl.innerHTML = '';
+      // create 6 options
+      q.opts.forEach((opt, idx) => {
+        const d = document.createElement('div');
+        d.className = 'opt';
+        d.dataset.idx = idx;
+        // left: emoji + label
+        const left = document.createElement('div');
+        left.style.display = 'flex'; left.style.alignItems = 'center';
+        const emoji = document.createElement('div'); emoji.className = 'emoji'; emoji.innerHTML = opt.emoji || '⬤';
+        const label = document.createElement('div'); label.className = 'label'; label.textContent = opt.text;
+        left.appendChild(emoji); left.appendChild(label);
+        // right: show if chosen
+        const right = document.createElement('div'); right.className = 'chosen';
+        if (state.answers[i] === idx) { right.innerHTML = '<span style="color:var(--accent)">✔ Chosen</span>'; d.style.border = '1px solid rgba(212,175,55,0.6)'; }
+        d.appendChild(left); d.appendChild(right);
+
+        d.addEventListener('click', () => chooseOption(i, idx));
+        optionsEl.appendChild(d);
+      });
+      updateProgress();
+    }
+
+    function chooseOption(qIndex, optIndex) {
+      // store selection
+      state.answers[qIndex] = optIndex;
+      // apply immediate reactive NPC comments (for player feedback) but don't finalize scores until submit
+      const opt = QUESTIONS[qIndex].opts[optIndex];
+      if (opt.react) {
+        Object.keys(opt.react).forEach(npcKey => {
+          if (NPCS[npcKey]) {
+            NPCS[npcKey].rel += opt.react[npcKey];
+            appendNpcLine(npcKey, npcReactText(npcKey, optIndex));
+          }
+        });
+      }
+      // visual feedback: mark chosen
+      renderQuestion(qIndex);
+    }
+
+    // small helper to return a reactive NPC line
+    function npcReactText(key, optIdx) {
+      const npc = NPCS[key];
+      // vary lines slightly
+      const stubs = [
+        `I see your hand moves with purpose, ${npc.name} nods.`,
+        `${npc.name} remarks: "Interesting choice."`,
+        `${npc.name} chuckles under their breath.`,
+        `${npc.name} frowns and consults old notes.`,
+        `${npc.name} smiles thinly; the tavern listens.`
+      ];
+      return stubs[(optIdx + (npc.rel || 0)) % stubs.length];
+    }
+
+    // append npc line in side panel
+    function appendNpcLine(key, text) {
+      const el = document.getElementById('npc-talk');
+      const p = document.createElement('p');
+      p.innerHTML = `<strong>${NPCS[key].name}:</strong> ${text}`;
+      el.appendChild(p);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // navigation
+    function nextQuestion() {
+      if (state.index < QUESTIONS.length - 1) {
+        state.index++;
+        renderQuestion();
+      } else {
+        // at end
+        submitQuiz();
+      }
+    }
+    function prevQuestion() {
+      if (state.index > 0) {
+        state.index--;
+        renderQuestion();
+      }
+    }
+
+    function updateProgress() {
+      const pct = Math.round(((state.answers.filter(a => a !== null).length) / QUESTIONS.length) * 100);
+      progressBar.style.width = pct + '%';
+    }
+
+    // submit quiz
+    function submitQuiz() {
+      // ensure all questions answered
+      const unanswered = QUESTIONS.reduce((acc, q, idx) => acc.concat(state.answers[idx] === null ? idx + 1 : []), []);
+      if (unanswered.length > 0) {
+        if (!confirm("You haven't answered all questions. Submit anyway? (Unanswered will be considered neutral)")) {
+          return;
+        }
+      }
+
+      // compute attribute totals from selections
+      // Reset attributes
+      state.attr = { military:0, magic:0, stealth:0, piety:0, wealth:0, charisma:0, craft:0 };
+
+      QUESTIONS.forEach((q, i) => {
+        const choiceIdx = state.answers[i];
+        if (choiceIdx === null || choiceIdx === undefined) return;
+        const opt = q.opts[choiceIdx];
+        if (!opt || !opt.delta) return;
+        Object.keys(opt.delta).forEach(k => {
+          // guard: if invalid attr names appear, skip
+          if (state.attr.hasOwnProperty(k)) state.attr[k] += opt.delta[k];
+        });
+      });
+
+      // compute composite score from weighted attributes
+      // We'll create a single "score" that maps to RANKS, but first compute attribute importance
+      const attr = state.attr;
+      const militaryScore = Math.max(0, attr.military || 0);
+      const magicScore = Math.max(0, attr.magic || 0);
+      const stealthScore = Math.max(0, attr.stealth || 0);
+      const pietyScore = Math.max(0, attr.piety || 0);
+      const wealthScore = Math.max(0, attr.wealth || 0);
+      const charismaScore = Math.max(0, attr.charisma || 0);
+      const craftScore = Math.max(0, attr.craft || 0);
+
+      // Compose a final score using weights that reflect medieval importance
+      // lower level: mostly craft/wealth/charisma modest. higher rank needs combinations (wealth + military + charisma/piety)
+      // We will produce a normalized score between 0 and 100 arbitrarily and then map to ranks length.
+      const score = Math.max(0,
+        (militaryScore * 2.5) +
+        (magicScore * 2.2) +
+        (stealthScore * 1.2) +
+        (pietyScore * 1.5) +
+        (wealthScore * 2.8) +
+        (charismaScore * 2.6) +
+        (craftScore * 1.9)
+      );
+
+      // normalize scale: assume plausible maximum ~200; scale to 0-100
+      const normalized = Math.round(Math.min(100, (score / 200) * 100));
+
+      // map normalized to rank index
+      // We'll map 0-100 onto RANKS length
+      const rankIndex = Math.min(RANKS.length - 1, Math.floor((normalized / 100) * (RANKS.length - 1)));
+      const finalRank = RANKS[rankIndex];
+
+      // Build the 'basis' for rank: top attributes and short explanation
+      const sortedAttrs = Object.entries(attr).sort((a,b)=>b[1]-a[1]);
+      const top3 = sortedAttrs.slice(0,3).map(([k,v]) => `${k} (${v >= 0 ? '+'+v : v})`);
+      const explanationLines = [];
+      explanationLines.push(`Top attributes: ${top3.join(', ')}`);
+      explanationLines.push(`Normalized score: ${normalized} / 100`);
+      // give narrative basis
+      let basis = '';
+      if (normalized < 6) basis = `Thy deeds suggest a meagre life; little skill, coin, or favor. You linger among the peasants.`;
+      else if (normalized < 16) basis = `Thy station is humble; you may be a mud beggar or a struggling tradesperson.`;
+      else if (normalized < 28) basis = `Skilled in one area but lacking breadth — perhaps a basket-weaver or unsuccessful baker.`;
+      else if (normalized < 40) basis = `You show craft or some skill. A decent farmer or humble blacksmith fits thy lot.`;
+      else if (normalized < 55) basis = `A respectable presence: good brewer, self-taught warrior, or a capable artisan.`;
+      else if (normalized < 70) basis = `Well-rounded: a respected soldier, noble guardsman, or adventurous figure.`;
+      else if (normalized < 85) basis = `High station likely: a respected knight, Top Baron, or even a Count/Earl with influence.`;
+      else if (normalized < 95) basis = `Exceptional — ducal or princely blood might be thine.`;
+      else if (normalized <= 100) basis = `Almost divine: kingship or even higher. Legends whisper of gods among mortals.`;
+
+      // Present results: do NOT show numerical score until the end; but we already computed it — we will show 'normalized' only in the explanation area once showing results.
+      showResults(finalRank, normalized, basis, explanationLines);
+
+      // let NPCs respond to the final outcome
+      Object.keys(NPCS).forEach(k => {
+        const npc = NPCS[k];
+        const mood = npc.rel;
+        let line = '';
+        if (mood > 2) line = `${npc.name} raises a mug to thy success.`;
+        else if (mood > 0) line = `${npc.name} nods in approval.`;
+        else if (mood === 0) line = `${npc.name} watches you quietly.`;
+        else if (mood < 0) line = `${npc.name} crosses their arms and scowls at your rise.`;
+        appendNpcLine(k, line);
+      });
+
+      // persist last result for posterity
+      localStorage.setItem('medieval_quiz_result', JSON.stringify({ rank: finalRank, normalized, attr }));
+    }
+
+    function showResults(rank, normalized, basis, explanationLines) {
+      // replace main content with result summary
+      const main = document.querySelector('main .question-box');
+      main.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <h2 style="margin:0;color:var(--accent)">🏆 Your Rank: <span class="rank-badge">${rank}</span></h2>
+            <div style="margin-top:8px;font-weight:700">Basis for placement</div>
+            <div style="margin-top:8px;background:rgba(255,255,255,0.02);padding:10px;border-radius:8px">
+              <div>${basis}</div>
+              <div style="margin-top:8px;font-size:0.95rem;opacity:0.95">${explanationLines.join(' — ')}</div>
+            </div>
+          </div>
+          <div style="min-width:240px;text-align:center">
+            <div style="font-size:12px;color:#cfe9ff">Normalized Score</div>
+            <div style="font-size:34px;font-weight:900;color:var(--accent2)">${normalized}</div>
+            <div style="margin-top:8px">${rankBadgeDetail(rank)}</div>
+            <div style="margin-top:8px"><button onclick="downloadResult()" class="small">💾 Download Result</button></div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <h3 style="margin:6px 0">How attributes influenced this result</h3>
+          <pre>${JSON.stringify(state.attr, null, 2)}</pre>
+        </div>
+
+        <div style="margin-top:12px">
+          <h3 style="margin:6px 0">Narrative note</h3>
+          <div style="padding:10px;background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.2));border-radius:8px">
+            <p>From thine answers, the court and commons will treat thee thus:</p>
+            <p><em>${narrativeForRank(rank)}</em></p>
+          </div>
+        </div>
+
+        <div style="margin-top:14px">
+          <button onclick="downloadResult()" style="background:linear-gradient(90deg,var(--accent2),var(--accent));">📜 Save Result</button>
+          <button onclick="resetQuiz()" class="ghost">🔁 Try again</button>
+        </div>
+      `;
+      // confetti flash
+      document.querySelector('.confetti').style.opacity = 0.14;
+      setTimeout(()=>document.querySelector('.confetti').style.opacity = 0.08, 2000);
+    }
+
+    function rankBadgeDetail(rank) {
+      return `<div style="padding:6px 8px;border-radius:8px;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#031017;font-weight:900">${rank}</div>`;
+    }
+
+    function narrativeForRank(rank) {
+      // simple narrative mapping: more vivid text for certain ranks
+      if (rank.includes("peasant") || rank.includes("beggar")) return `Thou art tied to the soil. Sun and mud mark thy days; charity and small kindnesses will guide thy path.`;
+      if (rank.includes("basket") || rank.includes("baker")) return `A life of craft and trade; thy hands make life possible for many. Diligence will raise thee slowly.`;
+      if (rank.includes("farmer") || rank.includes("brewer") || rank.includes("blacksmith")) return `A respected maker among commoners. Skill and local reputation form the web that supports the realm.`;
+      if (rank.includes("soldier") || rank.includes("archer") || rank.includes("warrior")) return `Battle, honor, and discipline mark thy days. Glory and scars are thy coin.`;
+      if (rank.includes("Baron") || rank.includes("Viscount") || rank.includes("Count")) return `Noble blood, land, and duty. You stand among lords who shape policy and field levies.`;
+      if (rank.includes("Duke") || rank.includes("Prince") || rank.includes("Queen") || rank.includes("King")) return `Power immense; the fate of many lies with thy judgment. Expect rivals and adulation in equal measure.`;
+      if (rank.includes("God")) return `Legends sing of thee; the songs will be long and the envy longer. Be mindful: divinity invites sacrifice.`;
+      return `A life of trade, action, and potential; your choices will mould whether you rise to nobility or remain beloved among the folk.`;
+    }
+
+    // download result as JSON/text
+    function downloadResult() {
+      const res = localStorage.getItem('medieval_quiz_result');
+      if (!res) { alert('No result to download.'); return; }
+      const blob = new Blob([res], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'medieval_quiz_result.json';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    // NPC talk functions
+    function speakNpc(key) {
+      const npc = NPCS[key];
+      if (!npc) {
+        appendNpcLine('more', 'There are many faces — sailors, mages, and mysteries aplenty.');
+        return;
+      }
+      // pick a line reflecting relation
+      let line = '';
+      if (npc.rel > 2) line = "A warm laugh — they seem to like thee.";
+      else if (npc.rel > 0) line = "They nod politely and offer you a small token of respect.";
+      else if (npc.rel === 0) line = "They speak measured words, revealing little.";
+      else line = "Their eyes narrow — suspicion lingers in their voice.";
+      appendNpcLine(key, line);
+    }
+
+    // initiate quiz
+    function initQuiz() {
+      // try load from localStorage
+      const saved = localStorage.getItem('medieval_quiz_state');
+      if (saved) {
+        if (confirm("Saved progress found. Restore?")) {
+          const obj = JSON.parse(saved);
+          state = obj;
+          // ensure we have answers array of length 20
+          if (!state.answers || state.answers.length !== 20) state.answers = Array(20).fill(null);
+        } else {
+          state = { index:0, answers:Array(20).fill(null), attr:{military:0,magic:0,stealth:0,piety:0,wealth:0,charisma:0,craft:0} };
+        }
+      }
+      renderQuestion();
+      updateStatPanel();
+    }
+
+    function updateStatPanel() {
+      document.getElementById('stat-mil').textContent = state.attr.military;
+      document.getElementById('stat-mag').textContent = state.attr.magic;
+      document.getElementById('stat-ste').textContent = state.attr.stealth;
+      document.getElementById('stat-pie').textContent = state.attr.piety;
+      document.getElementById('stat-wei').textContent = state.attr.wealth;
+      document.getElementById('stat-cha').textContent = state.attr.charisma;
+      document.getElementById('stat-craft').textContent = state.attr.craft;
+    }
+
+    // save/restore
+    function saveProgress() {
+      localStorage.setItem('medieval_quiz_state', JSON.stringify(state));
+      alert('Progress saved.');
+    }
+    function resetQuiz() {
+      if (!confirm('Reset quiz? All progress will be lost.')) return;
+      localStorage.removeItem('medieval_quiz_state');
+      localStorage.removeItem('medieval_quiz_result');
+      state = { index:0, answers:Array(20).fill(null), attr:{military:0,magic:0,stealth:0,piety:0,wealth:0,charisma:0,craft:0} };
+      document.getElementById('npc-talk').innerHTML = 'The patrons murmur. NPCs will react as you answer.';
+      renderQuestion();
+      updateStatPanel();
+      progressBar.style.width = '0%';
+    }
+
+    // small helper because one question had a bad key in opts earlier
+    function sanitizeQuestions() {
+      for (let q of QUESTIONS) {
+        for (let opt of q.opts) {
+          if (!opt.delta) opt.delta = {};
+          // ensure no property with typo 'charism a' exists
+          if (opt.delta['charism a']) {
+            opt.delta['charisma'] = (opt.delta['charism a'] || 0);
+            delete opt.delta['charism a'];
+          }
+        }
+      }
+    }
+
+    sanitizeQuestions();
+    // create NPC placeholders in the DOM for initial lines
+    function setupNpcs() {
+      Object.keys(NPCS).forEach(k => {
+        NPCS[k].rel = 0; NPCS[k].lines = [];
+      });
+    }
+    setupNpcs();
+
+    // helper to append NPC lines for keys not in NPCS (like 'more')
+    function appendNpcLine(key, text) {
+      const el = document.getElementById('npc-talk');
+      const p = document.createElement('p');
+      const name = (NPCS[key] && NPCS[key].name) ? NPCS[key].name : key;
+      p.innerHTML = `<strong>${name}:</strong> ${text}`;
+      el.appendChild(p);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // kick off
+    initQuiz();
+
+    // Save auto every 30 sec
+    setInterval(()=>localStorage.setItem('medieval_quiz_state', JSON.stringify(state)), 30000);
+
+  </script>
+</body>
+</html>
