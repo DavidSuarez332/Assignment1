@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Birthday Quiz + Blackjack + Tavern DnD</title>
+  <style>
+    :root{
+      --bg:#0b1220;       /* deep space */
+      --card:#121a2b;     /* panel */
+      --ink:#e7f0ff;      /* text */
+      --muted:#9fb3d1;    /* muted text */
+      --accent:#7c4dff;   /* purple */
+      --good:#28d17c;     /* green */
+      --bad:#ff4d6d;      /* red */
+      --gold:#ffd66b;     /* gold */
+      --border: #1e2940;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% 0%, #101832 0%, var(--bg) 60%) fixed;
+      color:var(--ink);
+    }
+    header{
+      position:sticky; top:0; z-index:50; backdrop-filter:saturate(180%) blur(8px);
+      background: linear-gradient(180deg, rgba(11,18,32,.9), rgba(11,18,32,.5));
+      border-bottom:1px solid var(--border);
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:18px}
+    h1{font-size: clamp(28px, 3.4vw, 44px); margin:6px 0 0; letter-spacing:.3px}
+    .subtitle{color:var(--muted); margin:6px 0 14px}
+
+    .grid{display:grid; gap:16px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); align-items:stretch}
+    .card{
+      background: linear-gradient(180deg, #121a2b 0%, #0e1526 100%);
+      border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .section-title{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:#dbe7ff; margin:2px 0 14px; font-size:13px}
+    .pill{display:inline-flex; align-items:center; gap:8px; border:1px solid var(--border); background:#0f1830; padding:6px 10px; border-radius:999px; color:var(--muted); font-size:12px}
+
+    button{
+      appearance:none; border:1px solid var(--border); background: linear-gradient(180deg, #1a2340, #131a30);
+      color:var(--ink); padding:10px 14px; border-radius:12px; font-weight:650; cursor:pointer; transition:transform .06s ease, background .2s ease; box-shadow: 0 6px 16px rgba(0,0,0,.25)
+    }
+    button:hover{transform: translateY(-1px)}
+    button:active{transform: translateY(0)}
+    .btn-accent{background: linear-gradient(180deg, #7c4dff, #5b32df); border-color:#5a38d7}
+    .btn-good{background: linear-gradient(180deg, #18b56b, #0f8f54); border-color:#0e7d49}
+    .btn-bad{background: linear-gradient(180deg, #ff4d6d, #d03a55); border-color:#b23349}
+
+    .q{padding:12px 12px; border-radius:14px; border:1px solid var(--border); margin:12px 0; background: #0f162b}
+    .q h3{margin:0 0 8px; font-size:16px}
+    .opt{display:flex; gap:10px; align-items:center; padding:8px 10px; margin:8px 0; border-radius:10px; border:1px dashed #2a3655; cursor:pointer}
+    .opt:hover{background:#121d3a}
+    input[type=radio]{transform: scale(1.15)}
+
+    .result{padding:12px; border:1px solid var(--border); border-radius:14px; background:#0e1630; margin-top:12px}
+
+    .scorebar{height:10px; background:#0c1226; border-radius:999px; border:1px solid #22325a; overflow:hidden}
+    .scorebar > span{display:block; height:100%; width:0; background: linear-gradient(90deg, #18b56b, #7c4dff); transition: width .5s ease}
+
+    /* Blackjack */
+    .bj-area{display:grid; gap:14px}
+    .table{background: radial-gradient(600px 300px at 50% 0%, #16361f, #0c2813); border:1px solid #214a2b; padding:14px; border-radius:16px}
+    .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+    .hand{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .cardchip{font-size:22px; padding:10px 12px; border-radius:12px; background:#0d1324; border:1px solid var(--border)}
+    .card{
+      width:50px; height:70px; border-radius:10px; background:#f4f7ff; color:#111; display:grid; place-items:center; font-weight:800;
+      box-shadow:0 6px 14px rgba(0,0,0,.25); border:2px solid #e1e6ff
+    }
+    .secret{display:none; padding:12px; border:1px dashed #b48c2e; background:#1d1520; border-radius:14px; color:#ffdca8}
+
+    /* DnD */
+    .dnd-log{height:200px; overflow:auto; background:#0c1326; border:1px solid var(--border); border-radius:12px; padding:10px}
+    .tag{display:inline-flex; gap:6px; padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:#0e1733; color:var(--muted); font-size:12px; margin-right:6px}
+    .choices{display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))}
+
+    footer{opacity:.7; text-align:center; padding:30px 0; color:var(--muted)}
+    a{color:var(--gold)}
+    .tiny{font-size:12px; color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h1>🎉 Birthday Quiz + ♣️♠️ Blackjack + 🏰 Tavern DnD</h1>
+          <div class="subtitle">Have fun, score the vibes, win some hands, and choose your fate.</div>
+        </div>
+        <div class="pill">Built for speed ⚡️ — single file, no libs</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="grid">
+
+      <!-- QUIZ -->
+      <section class="card" id="quizSection">
+        <div class="section-title">📝 Vibe Check Quiz</div>
+        <form id="quizForm"></form>
+        <div class="row" style="justify-content:space-between; margin-top:10px">
+          <button class="btn-accent" id="submitQuiz" type="button">Submit Quiz ✅</button>
+          <span class="tiny" id="quizCount"></span>
+        </div>
+        <div class="result" id="quizResult" style="display:none">
+          <div class="row" style="justify-content:space-between">
+            <div><strong>Total Score:</strong> <span id="scoreOut">0</span></div>
+            <div>
+              <span class="tag" id="tagMood">—</span>
+              <span class="tag" id="tagBadge">—</span>
+            </div>
+          </div>
+          <div class="scorebar" style="margin-top:8px"><span id="bar"></span></div>
+          <div id="scoreMsg" style="margin-top:10px; color:var(--muted)"></div>
+        </div>
+      </section>
+
+      <!-- BLACKJACK -->
+      <section class="card" id="blackjackSection">
+        <div class="section-title">🃏 Blackjack Mini-Game</div>
+        <div class="bj-area">
+          <div class="row">
+            <span class="cardchip">🏆 Wins: <b id="wins">0</b></span>
+            <span class="cardchip">🪙 Bank: <b id="bank">100</b></span>
+            <span class="cardchip">🎯 Goal: Win 2 hands to unlock a secret</span>
+          </div>
+          <div class="table">
+            <div class="row"><strong>Dealer</strong> 🤖 &nbsp;—&nbsp; <span id="dealerTotal">0</span></div>
+            <div class="hand" id="dealerHand"></div>
+            <hr style="border:none; border-top:1px dashed #2a5a36; margin:10px 0">
+            <div class="row"><strong>You</strong> 🧑‍🚀 &nbsp;—&nbsp; <span id="playerTotal">0</span></div>
+            <div class="hand" id="playerHand"></div>
+          </div>
+          <div class="row">
+            <button id="dealBtn" class="btn-good">🎲 Deal</button>
+            <button id="hitBtn">➕ Hit</button>
+            <button id="standBtn" class="btn-bad">🛑 Stand</button>
+            <button id="resetBJ">♻️ Reset</button>
+          </div>
+          <div class="result" id="bjMsg">Place your bet (imaginary) and press Deal 😄</div>
+          <div class="secret" id="secretMsg">🔓 <strong>You have unlocked a side quest!</strong><br>
+            Hard Rock Casino added to the quest log. 🎰🪩
+          </div>
+        </div>
+      </section>
+
+      <!-- DND -->
+      <section class="card" id="dndSection">
+        <div class="section-title">🏰 Simple Decision-Based DnD — The Moonlit Tavern</div>
+        <div class="row" style="gap:8px">
+          <span class="tag">🤝 Friends: <b id="friends">0</b></span>
+          <span class="tag">😾 Enemies: <b id="enemies">0</b></span>
+          <span class="tag">🎒 Inventory: <b id="inv">—</b></span>
+        </div>
+        <div class="dnd-log" id="log"></div>
+        <div class="choices" id="choices" style="margin-top:10px"></div>
+        <div class="row" style="margin-top:10px">
+          <button id="restartDnd">🔁 Restart Adventure</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap tiny">All in one page • No external dependencies • Works offline ✨</div>
+  </footer>
+
+  <script>
+    /*****************
+     * QUIZ DATA     *
+     *****************/
+    const QUESTIONS = [
+      {id:'q1', text:'happy birthday twin', options:[
+        {id:'a1', text:'thanks twin', score:3},
+        {id:'a2', text:'thank you bro', score:2},
+        {id:'a3', text:'Im 27 and salty about it', score:0}
+      ]},
+      {id:'q2', text:'When you seek adrenaline, you prefer:', options:[
+        {id:'b1', text:'Running an offensive mission', score:3},
+        {id:'b2', text:'Seeing some crazy shit', score:2},
+        {id:'b3', text:"Put a curious finger where it doesn't belong", score:0}
+      ]},
+      {id:'q3', text:'Which aesthetic do you prefer for a night out?', options:[
+        {id:'c1', text:'Fully swagged out with gel in my hair and vaseline in my pocket', score:3},
+        {id:'c2', text:'mud aesthetic and smell horrible', score:1},
+        {id:'c3', text:'sad jerkin', score:0}
+      ]},
+      {id:'q4', text:'How much does being a siiik cunt matter to you?', options:[
+        {id:'d1', text:'Big time — peak physicality is inspiring', score:3},
+        {id:'d2', text:'Somewhat — respect it from afar', score:1},
+        {id:'d3', text:'Not a priority for me', score:0}
+      ]},
+      {id:'q5', text:'do you wanna chill?', options:[
+        {id:'e1', text:'yes but i have to take a shit first', score:3},
+        {id:'e2', text:'not rn', score:0},
+        {id:'e3', text:'Not really i wouldd rather be left alone and eat pizza and game bro', score:1}
+      ]},
+      {id:'q6', text:'Which night would you pick?', options:[
+        {id:'f1', text:'a sad night filled with crying and spitting', score:0},
+        {id:'f2', text:'a furry convention and develop a whooping cough', score:2},
+        {id:'f3', text:'spittin and screamin and hootin', score:3}
+      ]},
+      {id:'q7', text:'When with friends, I like to', options:[
+        {id:'g1', text:'Do something adventurous and be engaged', score:3},
+        {id:'g2', text:'Sing blissfully in the moonlight', score:2},
+        {id:'g3', text:'Be soft and a good boy', score:0}
+      ]},
+      {id:'q8', text:'How do you feel about meat', options:[
+        {id:'h1', text:'I love meat brah', score:3},
+        {id:'h2', text:'I’m curious but cautious', score:1},
+        {id:'h3', text:'I feel it', score:0}
+      ]},
+      {id:'q9', text:'Is Panfilo a good boi', options:[
+        {id:'i1', text:'jessssss — obviously dood', score:3},
+        {id:'i2', text:'of course hes a good fat', score:1},
+        {id:'i3', text:'No', score:0}
+      ]},
+      {id:'q10', text:'wyd', options:[
+        {id:'j1', text:'This quiz to see what its about', score:3},
+        {id:'j2', text:'your mom', score:1},
+        {id:'j3', text:"nothing and i dont wanna do shit ever", score:0}
+      ]},
+      {id:'q11', text:'What\'s the first thing they ask you in Skyrim?', options:[
+        {id:'k1', text:'Heyah bud, get up', score:0},
+        {id:'k2', text:'Hey, you. You\'ve awoken', score:1},
+        {id:'k3', text:"Hey, you. You're finally awake", score:2}
+      ]},
+      {id:'q12', text:'What\'s the best zomb video game to you?', options:[
+        {id:'l1', text:'Left4Dead', score:3},
+        {id:'l2', text:'Walking Dead TTS', score:1},
+        {id:'l3', text:'Doom', score:0}
+      ]},
+      {id:'q13', text:'Spin the wheel?', options:[
+        {id:'m1', text:'Yes — Red', score:3},
+        {id:'m2', text:'Yes - Black', score:1},
+        {id:'m3', text:'No thanks.. no no, Green', score:0}
+      ]},
+      {id:'q14', text:"Don't ever talk about", options:[
+        {id:'n1', text:'the Dog Boy', score:3},
+        {id:'n2', text:'Cretin Jones', score:1},
+        {id:'n3', text:'the fappening', score:0}
+      ]},
+      {id:'q15', text:'The nickname that fits me best is', options:[
+        {id:'o1', text:'Mi nino bello', score:1},
+        {id:'o2', text:'Pocholo', score:3},
+        {id:'o3', text:'Capitan Culo', score:0}
+      ]},
+      {id:'q16', text:'YO yo YO yo YO yo...', options:[
+        {id:'p1', text:'yo me estaba masturbaaaah', score:1},
+        {id:'p2', text:'me estaba masturbaaaahn', score:3},
+        {id:'p3', text:'todo el mundo me dice que tengo a dejar de mastubahhh', score:0}
+      ]},
+      {id:'q17', text:'do you want to do something wetttttt for your birthday', options:[
+        {id:'q1_opt', text:'eh', score:1},
+        {id:'q2_opt', text:'bro Yes!', score:3},
+        {id:'q3_opt', text:'todo el mundo me dice que tengo a dejar de mastubahhh', score:0}
+      ]},
+      {id:'q18', text:'you scratched your ass...', options:[
+        {id:'r1', text:'sniff it', score:1},
+        {id:'r2', text:'flick your fingers as if you are getting the fart off your fingers', score:3},
+        {id:'r3', text:'wash my hands', score:0}
+      ]},
+      {id:'q19', text:'Alex Jones is:', options:[
+        {id:'s1', text:'Right', score:1},
+        {id:'s2', text:'a part of the homosexual frog lizard people', score:3},
+        {id:'s3', text:'a great person and a globolist', score:0}
+      ]},
+      {id:'q20', text:'Do you want to see some BKFC on ICE fights on Oct.10', options:[
+        {id:'t1', text:'gotta check my schedule', score:0},
+        {id:'t2', text:'i mean yeah', score:1},
+        {id:'t3', text:'hell yeh brether', score:3}
+      ]}
+    ];
+
+    // Render quiz
+    const form = document.getElementById('quizForm');
+    const quizCount = document.getElementById('quizCount');
+    QUESTIONS.forEach((q, idx) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'q';
+      wrap.innerHTML = `<h3>${idx+1}. ${q.text}</h3>`;
+      q.options.forEach(opt => {
+        const id = `${q.id}_${opt.id}`;
+        const label = document.createElement('label');
+        label.className = 'opt';
+        label.setAttribute('for', id);
+        label.innerHTML = `
+          <input type="radio" name="${q.id}" id="${id}" value="${opt.score}" required>
+          <span>${opt.text}</span>
+          <span class="tiny" style="margin-left:auto">score: ${opt.score}</span>
+        `;
+        wrap.appendChild(label);
+      });
+      form.appendChild(wrap);
+    });
+    quizCount.textContent = `Questions: ${QUESTIONS.length}`;
+
+    // Score quiz
+    const submitQuiz = document.getElementById('submitQuiz');
+    const scoreOut = document.getElementById('scoreOut');
+    const scoreMsg = document.getElementById('scoreMsg');
+    const tagMood = document.getElementById('tagMood');
+    const tagBadge = document.getElementById('tagBadge');
+    const bar = document.getElementById('bar');
+    const quizResult = document.getElementById('quizResult');
+
+    submitQuiz.addEventListener('click', () => {
+      const formData = new FormData(form);
+      let sum = 0;
+      for (const q of QUESTIONS) {
+        const v = formData.get(q.id);
+        if (v === null) { alert('Answer all questions first 🙂'); return; }
+        sum += Number(v);
+      }
+      const max = QUESTIONS.length * 3;
+      const pct = Math.round((sum / max) * 100);
+      scoreOut.textContent = `${sum} / ${max} (${pct}%)`;
+      bar.style.width = pct + '%';
+
+      let mood = 'Chill';
+      if (pct >= 80) mood = 'Legend 🔥';
+      else if (pct >= 60) mood = 'Certified Vibes ✨';
+      else if (pct >= 40) mood = 'Kinda Saucy 😎';
+      else mood = 'Homebody 🛋️';
+      tagMood.textContent = mood;
+
+      const badge = pct >= 70 ? '🎖️ Siiik Unit' : pct >= 40 ? '🥈 Mid Ranger' : '🥉 Bench Bro';
+      tagBadge.textContent = badge;
+
+      scoreMsg.textContent = pct >= 70
+        ? 'You radiate main-character energy. Treat your squad to tacos 🌮.'
+        : pct >= 40
+        ? 'Decent juice. Hydrate and you might evolve by nightfall.'
+        : 'Cozy night in. Blanket + controller + pizza = perfect.';
+
+      quizResult.style.display = 'block';
+      quizResult.scrollIntoView({behavior:'smooth', block:'nearest'});
+    });
+
+    /*****************
+     * BLACKJACK     *
+     *****************/
+    const dealerHandEl = document.getElementById('dealerHand');
+    const playerHandEl = document.getElementById('playerHand');
+    const dealerTotalEl = document.getElementById('dealerTotal');
+    const playerTotalEl = document.getElementById('playerTotal');
+    const bjMsg = document.getElementById('bjMsg');
+    const secretMsg = document.getElementById('secretMsg');
+    const winsEl = document.getElementById('wins');
+    const bankEl = document.getElementById('bank');
+
+    let deck = [];
+    let player = [];
+    let dealer = [];
+    let wins = 0;
+    let bank = 100;
+    let inRound = false;
+
+    const suits = ['♠️','♥️','♦️','♣️'];
+    const ranks = [
+      {r:'A', v:11}, {r:'2', v:2}, {r:'3', v:3}, {r:'4', v:4},
+      {r:'5', v:5}, {r:'6', v:6}, {r:'7', v:7}, {r:'8', v:8},
+      {r:'9', v:9}, {r:'10', v:10}, {r:'J', v:10}, {r:'Q', v:10}, {r:'K', v:10}
+    ];
+
+    function buildDeck(){
+      const d = [];
+      for (const s of suits){
+        for (const rk of ranks){ d.push({s, r:rk.r, v:rk.v}); }
+      }
+      for (let i=d.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [d[i], d[j]] = [d[j], d[i]]; }
+      return d;
+    }
+
+    function handValue(hand){
+      let total = hand.reduce((a,c)=>a+c.v,0);
+      let aces = hand.filter(c=>c.r==='A').length;
+      while (total>21 && aces>0){ total -= 10; aces--; }
+      return total;
+    }
+
+    function cardEl(c){
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.textContent = `${c.r}${c.s}`;
+      el.style.borderColor = (c.s==='♥️'||c.s==='♦️') ? '#ffd1d9' : '#e1e6ff';
+      return el;
+    }
+
+    function render(){
+      dealerHandEl.innerHTML = '';
+      playerHandEl.innerHTML = '';
+      dealer.forEach(c=>dealerHandEl.appendChild(cardEl(c)));
+      player.forEach(c=>playerHandEl.appendChild(cardEl(c)));
+      dealerTotalEl.textContent = handValue(dealer);
+      playerTotalEl.textContent = handValue(player);
+      winsEl.textContent = wins;
+      bankEl.textContent = bank;
+    }
+
+    function deal(){
+      deck = buildDeck();
+      player = [deck.pop(), deck.pop()];
+      dealer = [deck.pop(), deck.pop()];
+      inRound = true;
+      bjMsg.textContent = 'Good luck! 🍀';
+      render();
+    }
+
+    function hit(){
+      if(!inRound) return; player.push(deck.pop()); render();
+      const v = handValue(player);
+      if (v>21){
+        bank -= 10; inRound=false; bjMsg.textContent = 'Bust! 💥 Dealer wins.'; checkSecret();
+      }
+    }
+
+    function stand(){
+      if(!inRound) return; // dealer draws to 17
+      while (handValue(dealer) < 17){ dealer.push(deck.pop()); }
+      const pv = handValue(player), dv = handValue(dealer);
+      if (dv>21 || pv>dv){ wins++; bank += 10; bjMsg.textContent = 'You win! 🥳'; }
+      else if (pv===dv){ bjMsg.textContent = 'Push. 🤝'; }
+      else { bank -= 10; bjMsg.textContent = 'Dealer wins. 😬'; }
+      inRound=false; render(); checkSecret();
+    }
+
+    function resetBJ(){ deck=[]; player=[]; dealer=[]; inRound=false; bjMsg.textContent='Shuffled and ready. 🧼 Press Deal!'; render(); }
+
+    function checkSecret(){
+      if (wins >= 2){ secretMsg.style.display = 'block'; }
+    }
+
+    document.getElementById('dealBtn').addEventListener('click', e=>{e.preventDefault(); deal();});
+    document.getElementById('hitBtn').addEventListener('click', e=>{e.preventDefault(); hit();});
+    document.getElementById('standBtn').addEventListener('click', e=>{e.preventDefault(); stand();});
+    document.getElementById('resetBJ').addEventListener('click', e=>{e.preventDefault(); resetBJ();});
+
+    render();
+
+    /*****************
+     * SIMPLE DND    *
+     *****************/
+    const log = document.getElementById('log');
+    const choices = document.getElementById('choices');
+    const friendsEl = document.getElementById('friends');
+    const enemiesEl = document.getElementById('enemies');
+    const invEl = document.getElementById('inv');
+
+    let state;
+
+    const SCENES = {
+      start: {
+        text: '🌙 The Moonlit Tavern hums with laughter. Bartenders hustle, dice rattle, and a lute spills a cozy melody. You step inside with a few coins and a dream.',
+        choices: [
+          {label:'🍺 Buy a round for the nearest table', to:'round', f:+2, log:'You splash some coin and earn smiles.'},
+          {label:'🪄 Ask the barkeep about rumors', to:'rumor', log:'You lean in: "Anything strange tonight?"'},
+          {label:'🃏 Challenge a card shark', to:'shark', e:+1, log:'You sit across from a smirking rogue.'}
+        ]
+      },
+      round: {
+        text: 'Cheers erupt! A dwarf names Brunna thumps your back. "Friend, any pal of ale is a pal of mine!"',
+        choices: [
+          {label:'👋 Chat with Brunna', to:'brunna', f:+2, log:'Brunna likes your vibe.'},
+          {label:'🪑 Take a quiet corner seat', to:'corner', log:'You survey the room, eyes sharp.'}
+        ]
+      },
+      rumor: {
+        text: 'The barkeep whispers: "Bandits eye the road to Hard Rock Keep. The guard seeks bold hearts."',
+        gain: {item:'Tavern Tip'},
+        choices: [
+          {label:'⚔️ Volunteer to help the guard', to:'guard', f:+1, log:'Duty calls.'},
+          {label:'🎲 Gamble first (warm up)', to:'shark', log:'You hunt for the shark again.'}
+        ]
+      },
+      shark: {
+        text: 'The card shark grins: "Care for a friendly hand? Winner takes pride. Loser buys pretzels."',
+        choices: [
+          {label:'🂡 Play cautiously', to:'shark_win', f:+1, log:'You count the cards (badly) but stay cool.'},
+          {label:'🂮 Go all in bravely', to:'shark_lose', e:+1, log:'You slam the table with swagger.'}
+        ]
+      },
+      shark_win: {
+        text: 'You outsmart the shark! A few patrons applaud. The shark shrugs, impressed.',
+        gain: {item:'Shark Token'},
+        choices: [
+          {label:'🤝 Offer the shark a truce', to:'ally_shark', f:+1, log:'Respect is earned.'},
+          {label:'🏆 Flash the token and boast', to:'boast', e:+1, log:'The room goes quiet...'}
+        ]
+      },
+      shark_lose: {
+        text: 'Lady Luck yawns. You lose a small stack and the shark winks. Someone snickers.',
+        choices: [
+          {label:'😅 Laugh it off, buy pretzels', to:'round', f:+1, log:'Good sports gain good friends.'},
+          {label:'😠 Accuse the shark of cheating', to:'brawl', e:+2, log:'The room tenses.'}
+        ]
+      },
+      ally_shark: {
+        text: 'The shark nods. "Didn\'t expect grace. Name\'s Lysa. Call if you need a favor."',
+        choices: [
+          {label:'📜 Ask about a job', to:'job_hook', f:+1},
+          {label:'🍻 Celebrate with the crowd', to:'brunna'}
+        ]
+      },
+      boast: {
+        text: 'Your boast backfires. A hulking half-orc stands. "Prove it."',
+        choices: [
+          {label:'🛡️ De-escalate gracefully', to:'deescalate', f:+1},
+          {label:'🥊 Accept a friendly spar', to:'spar', e:+1}
+        ]
+      },
+      brunna: {
+        text: 'Brunna shares a map doodle. "Bandits hate this alley. Shortcut to Hard Rock Casino… uh, *Keep*."',
+        gain: {item:'Alley Shortcut'},
+        choices: [
+          {label:'🧭 Follow the shortcut now', to:'road'},
+          {label:'🎶 Stay for songs and make more friends', to:'songs', f:+2}
+        ]
+      },
+      corner: {
+        text: 'In the corner, a hooded figure trades whispers. A purse changes hands.',
+        choices: [
+          {label:'👂 Eavesdrop', to:'eaves', e:+1},
+          {label:'🚶 Look away and keep it wholesome', to:'songs', f:+1}
+        ]
+      },
+      eaves: {
+        text: 'You overhear: "Meet at the old mill by midnight." The figure notices you.',
+        choices: [
+          {label:'🏃 Run to the guard with intel', to:'guard', f:+1},
+          {label:'🗡️ Shadow them to the mill', to:'mill', e:+1}
+        ]
+      },
+      guard: {
+        text: 'The captain sizes you up. "We need brave souls to secure the road to Hard Rock Keep. Are you in?"',
+        choices: [
+          {label:'✅ Pledge to help', to:'road', f:+1},
+          {label:'❌ Politely decline', to:'songs'}
+        ]
+      },
+      songs: {
+        text: 'You belt a chorus with strangers. Laughter, clinking mugs, found family vibes.',
+        choices: [
+          {label:'🧭 Head to the road', to:'road'},
+          {label:'🃏 One last friendly game', to:'shark'}
+        ]
+      },
+      road: {
+        text: 'Night air cools your cheeks. The road forks: left to the mill, right to the Keep gate.',
+        choices: [
+          {label:'⬅️ Old Mill', to:'mill'},
+          {label:'➡️ Hard Rock Keep Gate', to:'gate'}
+        ]
+      },
+      mill: {
+        text: 'At the creaking mill, bandits skulk. A risky plan forms…',
+        choices: [
+          {label:'🎭 Distract with song', to:'mill_song', f:+1},
+          {label:'🕳️ Sneak through the grain chute', to:'mill_sneak', e:+1}
+        ]
+      },
+      mill_song: {
+        text: 'Your chorus confuses them. Allies pounce. The bandits scatter! You earn a cheer.',
+        choices: [
+          {label:'🏁 Return to the tavern heroes', to:'ending_good'}
+        ]
+      },
+      mill_sneak: {
+        text: 'You slip, crash a ladder, and the bandits spot you. A scuffle erupts—messy but you survive.',
+        choices: [
+          {label:'🏁 Limp back, battle-scarred', to:'ending_rough'}
+        ]
+      },
+      gate: {
+        text: 'The Keep gate gleams with lanterns and… casino banners? The guard laughs: "After duty, we roll dice."',
+        choices: [
+          {label:'🎰 Log the side quest: Hard Rock Casino', to:'ending_casino', f:+1}
+        ]
+      },
+      job_hook: {
+        text: 'Lysa whispers: "Escort a VIP to the Keep. Foes lurk, friends shine."',
+        choices: [
+          {label:'🛡️ Accept escort', to:'road', f:+1},
+          {label:'💤 Decline for rest', to:'songs'}
+        ]
+      },
+      deescalate: {
+        text: 'You offer a toast instead of fists. The half-orc grins. "You\'re alright."',
+        choices: [
+          {label:'🍻 Share a drink', to:'brunna', f:+1}
+        ]
+      },
+      spar: {
+        text: 'Spar turns playful. Crowd roars. No grudges—maybe a new friend.',
+        choices: [
+          {label:'🎉 Celebrate together', to:'songs', f:+1}
+        ]
+      },
+      ending_good: {
+        text: '🏆 You return as heroes. Friends abound, enemies few. The tavern lifts your name in song!'
+      },
+      ending_rough: {
+        text: '💥 You return bruised but wiser. Some enemies glare, but allies patch you up.'
+      },
+      ending_casino: {
+        text: '🔓 Side quest logged: Hard Rock Casino. Win two blackjack hands in the other panel to fully unlock it! 🎰'
+      }
+    };
+
+    function resetState(){
+      state = {friends:0, enemies:0, inv:[]};
+      updateHUD();
+    }
+
+    function updateHUD(){
+      friendsEl.textContent = state.friends;
+      enemiesEl.textContent = state.enemies;
+      invEl.textContent = state.inv.length ? state.inv.join(', ') : '—';
+    }
+
+    function write(line){
+      const p = document.createElement('div');
+      p.style.margin = '6px 0';
+      p.textContent = line;
+      log.appendChild(p);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function go(key){
+      const scene = SCENES[key];
+      if (!scene) return;
+      choices.innerHTML='';
+      write(scene.text);
+      if (scene.gain?.item){ state.inv.push(scene.gain.item); updateHUD(); }
+
+      if (!scene.choices){
+        const end = document.createElement('div');
+        end.className = 'row';
+        const btn = document.createElement('button');
+        btn.textContent = '🏁 The End — Restart';
+        btn.onclick = () => startGame();
+        end.appendChild(btn);
+        choices.appendChild(end);
+        return;
+      }
+
+      scene.choices.forEach(ch => {
+        const b = document.createElement('button');
+        b.textContent = ch.label;
+        b.onclick = () => {
+          if (ch.f) state.friends += (typeof ch.f==='number'? ch.f : 1);
+          if (ch.e) state.enemies += (typeof ch.e==='number'? ch.e : 1);
+          updateHUD();
+          if (ch.log) write(ch.log);
+          go(ch.to);
+        };
+        choices.appendChild(b);
+      });
+    }
+
+    function startGame(){
+      log.innerHTML='';
+      resetState();
+      write('🕯️ You push open the tavern door...');
+      go('start');
+    }
+
+    document.getElementById('restartDnd').addEventListener('click', startGame);
+    startGame();
+  </script>
+</body>
+</html>
