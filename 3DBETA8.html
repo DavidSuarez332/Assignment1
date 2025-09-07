@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Stick Figure Parkour Game</title>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    #winOverlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 3em;
+      font-weight: bold;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s;
+    }
+    #winOverlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    #playAgain {
+      margin-top: 20px;
+      font-size: 1rem;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: #00ff88;
+      color: black;
+      cursor: pointer;
+    }
+    #instructions {
+      position: absolute;
+      top: 10px; left: 10px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div id="instructions">
+    ⬅️➡️: Strafe<br>
+    ⬆️⬇️: Forward/Back<br>
+    W/S: Rotate<br>
+    D: Rotate faster right<br>
+    Space: Jump
+  </div>
+  <div id="winOverlay">
+    YOU WIN!
+    <button id="playAgain">Play Again</button>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js"></script>
+  <script>
+    let scene = new THREE.Scene();
+    let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 500);
+    let renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Lighting
+    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambient);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(5,10,7);
+    scene.add(dirLight);
+
+    // Ground
+    const groundGeo = new THREE.BoxGeometry(200,1,200);
+    const groundMat = new THREE.MeshPhongMaterial({color:0x228B22});
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.position.y = -0.5;
+    scene.add(ground);
+
+    // Stick figure (simple capsule body)
+    const bodyGeo = new THREE.CapsuleGeometry(0.5,1.5,4,8);
+    const bodyMat = new THREE.MeshPhongMaterial({color:0xffffff});
+    const stickFigure = new THREE.Mesh(bodyGeo, bodyMat);
+    stickFigure.position.set(0,1,0);
+    scene.add(stickFigure);
+
+    // Platform generation
+    let boxes = [];
+    function generatePlatforms() {
+      let currentY = 2;
+      for (let i=0; i<30; i++) {
+        const width = THREE.MathUtils.randFloat(2,6);
+        const depth = THREE.MathUtils.randFloat(2,6);
+        const height = THREE.MathUtils.randFloat(1,2);
+        const geo = new THREE.BoxGeometry(width,height,depth);
+        const mat = new THREE.MeshPhongMaterial({color:0x8B4513});
+        const box = new THREE.Mesh(geo, mat);
+
+        // Random offset + ensure upward progression
+        currentY += THREE.MathUtils.randFloat(2.5,4.5);
+        const offsetX = THREE.MathUtils.randFloat(-5,5);
+        const offsetZ = THREE.MathUtils.randFloat(-5,5);
+
+        box.position.set(offsetX, currentY, offsetZ);
+        scene.add(box);
+        boxes.push(box);
+      }
+    }
+    generatePlatforms();
+
+    // Goal cube (glowing)
+    const goalGeo = new THREE.BoxGeometry(2,2,2);
+    const goalMat = new THREE.MeshStandardMaterial({
+      emissive: 0xffff00,
+      emissiveIntensity: 1,
+      color: 0x222200
+    });
+    const goalCube = new THREE.Mesh(goalGeo, goalMat);
+    const topPlatform = boxes[boxes.length-1];
+    goalCube.position.set(topPlatform.position.x, topPlatform.position.y+3, topPlatform.position.z);
+    scene.add(goalCube);
+
+    // Postprocessing bloom
+    const composer = new THREE.EffectComposer(renderer);
+    const renderPass = new THREE.RenderPass(scene,camera);
+    composer.addPass(renderPass);
+    const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth,window.innerHeight),1.5,0.4,0.85);
+    composer.addPass(bloomPass);
+
+    // Controls
+    let forwardInput=0, strafeInput=0, rotateInput=0;
+    let velocityY=0;
+    let isOnGround=false;
+    const gravity=-0.02;
+    const jumpStrength=0.45;
+    const speed=0.15;
+    const strafeSpeed=0.15;
+    let gameWon=false;
+
+    document.addEventListener("keydown", e=>{
+      if(gameWon) return;
+      if(e.code==="ArrowUp") forwardInput=1;
+      if(e.code==="ArrowDown") forwardInput=-1;
+      if(e.code==="ArrowLeft") strafeInput=-1;
+      if(e.code==="ArrowRight") strafeInput=1;
+      if(e.code==="KeyW") rotateInput=0.03;
+      if(e.code==="KeyS") rotateInput=-0.03;
+      if(e.code==="KeyD") rotateInput=0.06;
+      if(e.code==="Space" && isOnGround){ velocityY=jumpStrength; }
+    });
+    document.addEventListener("keyup", e=>{
+      if(e.code==="ArrowUp"||e.code==="ArrowDown") forwardInput=0;
+      if(e.code==="ArrowLeft"||e.code==="ArrowRight") strafeInput=0;
+      if(e.code==="KeyW"||e.code==="KeyS"||e.code==="KeyD") rotateInput=0;
+    });
+
+    // Collision helper
+    function canMoveTo(x,z) {
+      for(const box of boxes){
+        const halfW = box.geometry.parameters.width/2;
+        const halfD = box.geometry.parameters.depth/2;
+        const minX = box.position.x-halfW-0.4;
+        const maxX = box.position.x+halfW+0.4;
+        const minZ = box.position.z-halfD-0.4;
+        const maxZ = box.position.z+halfD+0.4;
+        if(x>minX && x<maxX && z>minZ && z<maxZ){
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Overlay
+    const overlay=document.getElementById("winOverlay");
+    const playAgain=document.getElementById("playAgain");
+    playAgain.onclick=()=>location.reload();
+
+    // Animate
+    function animate(){
+      requestAnimationFrame(animate);
+
+      if(!gameWon){
+        stickFigure.rotation.y+=rotateInput;
+
+        const forward=new THREE.Vector3(Math.sin(stickFigure.rotation.y),0,Math.cos(stickFigure.rotation.y));
+        const right=new THREE.Vector3(Math.cos(stickFigure.rotation.y),0,-Math.sin(stickFigure.rotation.y));
+
+        const candidate=stickFigure.position.clone();
+        candidate.add(forward.clone().multiplyScalar(forwardInput*speed));
+        candidate.add(right.clone().multiplyScalar(strafeInput*strafeSpeed));
+
+        if(canMoveTo(candidate.x,candidate.z)){
+          stickFigure.position.x=candidate.x;
+          stickFigure.position.z=candidate.z;
+        }
+
+        velocityY+=gravity;
+        stickFigure.position.y+=velocityY;
+        isOnGround=false;
+
+        // Ground collision
+        if(stickFigure.position.y<=0){
+          stickFigure.position.y=0;
+          velocityY=0;
+          isOnGround=true;
+        }
+
+        // Box collision
+        for(const box of boxes){
+          const halfW=box.geometry.parameters.width/2;
+          const halfD=box.geometry.parameters.depth/2;
+          const minX=box.position.x-halfW;
+          const maxX=box.position.x+halfW;
+          const minZ=box.position.z-halfD;
+          const maxZ=box.position.z+halfD;
+          const topY=box.position.y+(box.geometry.parameters.height/2);
+          if(
+            stickFigure.position.x>minX && stickFigure.position.x<maxX &&
+            stickFigure.position.z>minZ && stickFigure.position.z<maxZ
+          ){
+            if(stickFigure.position.y<=topY+0.05 && velocityY<=0){
+              stickFigure.position.y=topY;
+              velocityY=0;
+              isOnGround=true;
+            }
+          }
+        }
+
+        // Win condition
+        const dx=stickFigure.position.x-goalCube.position.x;
+        const dy=stickFigure.position.y-goalCube.position.y;
+        const dz=stickFigure.position.z-goalCube.position.z;
+        if(Math.sqrt(dx*dx+dy*dy+dz*dz)<1.5){
+          gameWon=true;
+          overlay.classList.add("show");
+        }
+      }
+
+      // Camera follow
+      const camOffset=new THREE.Vector3(0,5,12).applyAxisAngle(new THREE.Vector3(0,1,0),-stickFigure.rotation.y);
+      camera.position.copy(stickFigure.position).add(camOffset);
+      camera.lookAt(stickFigure.position.clone().add(new THREE.Vector3(0,1.6,0)));
+
+      // Pulse goal cube
+      goalCube.material.emissiveIntensity=1+Math.sin(Date.now()*0.005)*0.5;
+
+      composer.render();
+    }
+    animate();
+
+    window.addEventListener("resize",()=>{
+      camera.aspect=window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth,window.innerHeight);
+      composer.setSize(window.innerWidth,window.innerHeight);
+    });
+  </script>
+</body>
+</html>
