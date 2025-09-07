@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>POV 3D Walking Game</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+
+<script>
+  // Scene setup
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb);
+
+  // Camera = player POV
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Lighting
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(5, 10, 5);
+  scene.add(light);
+
+  // Ground
+  const groundGeo = new THREE.PlaneGeometry(200, 200);
+  const groundMat = new THREE.MeshPhongMaterial({ color: 0x228B22 });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  scene.add(ground);
+
+  // Player body group
+  const player = new THREE.Group();
+  player.add(camera); // attach camera to player
+
+  // Stick figure legs (for looking down)
+  const legMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
+  const legGeo = new THREE.CylinderGeometry(0.1, 0.1, 1.2, 8);
+
+  const leftLeg = new THREE.Mesh(legGeo, legMat);
+  leftLeg.position.set(-0.2, -1, 0.2);
+  player.add(leftLeg);
+
+  const rightLeg = new THREE.Mesh(legGeo, legMat);
+  rightLeg.position.set(0.2, -1, 0.2);
+  player.add(rightLeg);
+
+  player.position.set(0, 2, 5); // start above ground
+  scene.add(player);
+
+  // Movement variables
+  let keys = {};
+  let speed = 0.15;
+  let rotationSpeed = 0.08; // sensitivity increased
+  let velocityY = 0;
+  const gravity = -0.01;
+  const jumpStrength = 0.25;
+  let isOnGround = true;
+
+  document.addEventListener("keydown", (e) => keys[e.key] = true);
+  document.addEventListener("keyup", (e) => keys[e.key] = false);
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    // Rotation (left/right)
+    if (keys["ArrowLeft"]) player.rotation.y += rotationSpeed;
+    if (keys["ArrowRight"]) player.rotation.y -= rotationSpeed;
+
+    // Move forward/backward
+    const direction = new THREE.Vector3(
+      Math.sin(player.rotation.y),
+      0,
+      Math.cos(player.rotation.y)
+    );
+    if (keys["ArrowUp"]) player.position.addScaledVector(direction, -speed);
+    if (keys["ArrowDown"]) player.position.addScaledVector(direction, speed);
+
+    // Jumping
+    if (keys[" "] && isOnGround) {
+      velocityY = jumpStrength;
+      isOnGround = false;
+    }
+
+    // Apply gravity
+    player.position.y += velocityY;
+    velocityY += gravity;
+
+    // Check ground collision
+    if (player.position.y <= 2) {
+      player.position.y = 2;
+      velocityY = 0;
+      isOnGround = true;
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // Resize
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+</body>
+</html>
