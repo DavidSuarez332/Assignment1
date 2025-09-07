@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Scrapbook</title>
+  <style>
+    body {
+      background: #fdf6f0;
+      font-family: "Georgia", serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      color: #5d3a00;
+      margin-bottom: 30px;
+    }
+    .scrapbook {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .photo-card {
+      background: #fff;
+      border: 3px solid #d4a373;
+      border-radius: 15px;
+      box-shadow: 4px 6px 12px rgba(0,0,0,0.2);
+      padding: 10px;
+      width: 300px;
+      transition: transform 0.2s;
+    }
+    .photo-card:hover {
+      transform: scale(1.05);
+    }
+    .photo-card img {
+      width: 100%;
+      border-radius: 10px;
+    }
+    .caption {
+      margin-top: 10px;
+      font-style: italic;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <h1>✨ My Online Scrapbook ✨</h1>
+  <div class="scrapbook">
+    <div class="photo-card">
+      <img src="IMG_0679.jpeg" alt="Scrapbook Photo 1">
+      <div class="caption">Enjoying a homemade meal</div>
+    </div>
+    <div class="photo-card">
+      <img src="IMG_0680.jpeg" alt="Scrapbook Photo 2">
+      <div class="caption">Big smile at the kitchen counter</div>
+    </div>
+  </div>
+</body>
+</html>
