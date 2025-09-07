@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Stick Figure Parkour Game</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+
+<script>
+  // === SCENE SETUP ===
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb);
+
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Lighting
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(5, 10, 5);
+  scene.add(light);
+
+  // Ground
+  const groundGeo = new THREE.PlaneGeometry(200, 200);
+  const groundMat = new THREE.MeshPhongMaterial({ color: 0x228B22 });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  scene.add(ground);
+
+  // === STICK FIGURE ===
+  const stickFigure = new THREE.Group();
+
+  // Head
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 16, 16),
+    new THREE.MeshPhongMaterial({ color: 0xffd1a4 })
+  );
+  head.position.y = 2.5;
+  stickFigure.add(head);
+
+  // Body
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2, 0.2, 1.5, 8),
+    new THREE.MeshPhongMaterial({ color: 0x000000 })
+  );
+  body.position.y = 1.5;
+  stickFigure.add(body);
+
+  // Legs
+  const legGeo = new THREE.CylinderGeometry(0.1, 0.1, 1, 8);
+  const legMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
+
+  const leftLeg = new THREE.Mesh(legGeo, legMat);
+  leftLeg.position.set(-0.2, 0.5, 0);
+  stickFigure.add(leftLeg);
+
+  const rightLeg = leftLeg.clone();
+  rightLeg.position.set(0.2, 0.5, 0);
+  stickFigure.add(rightLeg);
+
+  // Arms
+  const armGeo = new THREE.CylinderGeometry(0.1, 0.1, 1, 8);
+  const leftArm = new THREE.Mesh(armGeo, legMat);
+  leftArm.position.set(-0.5, 1.8, 0);
+  leftArm.rotation.z = Math.PI / 4;
+  stickFigure.add(leftArm);
+
+  const rightArm = leftArm.clone();
+  rightArm.position.set(0.5, 1.8, 0);
+  rightArm.rotation.z = -Math.PI / 4;
+  stickFigure.add(rightArm);
+
+  // Start stick figure ON the ground
+  stickFigure.position.set(0, 2, 5);
+  scene.add(stickFigure);
+
+  // === BOXES WITH RANDOM HEIGHTS ===
+  const boxes = [];
+  const boxGeo = new THREE.BoxGeometry(2, 2, 2);
+  const boxMat = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+
+  for (let i = 0; i < 20; i++) {
+    const height = 1 + Math.floor(Math.random() * 4); // random 1–4 tall
+    const box = new THREE.Mesh(new THREE.BoxGeometry(2, height, 2), boxMat);
+    box.position.set(
+      (Math.random() - 0.5) * 100,
+      height / 2,
+      (Math.random() - 0.5) * 100
+    );
+    scene.add(box);
+    boxes.push(box);
+  }
+
+  // === CAMERA FOLLOW ===
+  camera.position.set(0, 5, 10);
+
+  // === MOVEMENT VARIABLES ===
+  let keys = {};
+  let speed = 0.2;
+  let rotationSpeed = 0.08;
+  let velocityY = 0;
+  const gravity = -0.01;
+  const jumpStrength = 0.25;
+  let isOnGround = false;
+
+  document.addEventListener("keydown", (e) => keys[e.key] = true);
+  document.addEventListener("keyup", (e) => keys[e.key] = false);
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    // Rotation
+    if (keys["ArrowLeft"]) stickFigure.rotation.y += rotationSpeed;
+    if (keys["ArrowRight"]) stickFigure.rotation.y -= rotationSpeed;
+
+    // Movement direction
+    const direction = new THREE.Vector3(
+      Math.sin(stickFigure.rotation.y),
+      0,
+      Math.cos(stickFigure.rotation.y)
+    );
+    if (keys["ArrowUp"]) stickFigure.position.addScaledVector(direction, -speed);
+    if (keys["ArrowDown"]) stickFigure.position.addScaledVector(direction, speed);
+
+    // Jump
+    if (keys[" "] && isOnGround) {
+      velocityY = jumpStrength;
+      isOnGround = false;
+    }
+
+    // Gravity
+    stickFigure.position.y += velocityY;
+    velocityY += gravity;
+
+    // === COLLISION WITH GROUND ===
+    if (stickFigure.position.y <= 2) {
+      stickFigure.position.y = 2;
+      velocityY = 0;
+      isOnGround = true;
+    }
+
+    // === COLLISION WITH BOXES ===
+    isOnGround = false; // reset each frame, check again
+    boxes.forEach(box => {
+      const halfSize = 1;
+      const minX = box.position.x - 1;
+      const maxX = box.position.x + 1;
+      const minZ = box.position.z - 1;
+      const maxZ = box.position.z + 1;
+      const topY = box.position.y + box.geometry.parameters.height / 2;
+
+      if (
+        stickFigure.position.x > minX && stickFigure.position.x < maxX &&
+        stickFigure.position.z > minZ && stickFigure.position.z < maxZ
+      ) {
+        if (stickFigure.position.y <= topY + 1.5 && velocityY <= 0) {
+          stickFigure.position.y = topY + 1.5;
+          velocityY = 0;
+          isOnGround = true;
+        }
+      }
+    });
+
+    // Camera follow
+    const camOffset = new THREE.Vector3(0, 5, 10).applyAxisAngle(new THREE.Vector3(0,1,0), -stickFigure.rotation.y);
+    camera.position.copy(stickFigure.position).add(camOffset);
+    camera.lookAt(stickFigure.position);
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // Handle resize
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+</body>
+</html>
