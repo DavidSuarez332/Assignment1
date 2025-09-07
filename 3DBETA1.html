@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Walking Game with Stick Figure</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+
+<script>
+  // Setup scene, camera, renderer
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb); // sky blue
+
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Light
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(5, 10, 5);
+  scene.add(light);
+
+  // Ground
+  const groundGeo = new THREE.PlaneGeometry(200, 200);
+  const groundMat = new THREE.MeshPhongMaterial({ color: 0x228B22 });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  scene.add(ground);
+
+  // Stick figure (head, body, arms, legs)
+  const stickFigure = new THREE.Group();
+
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 16, 16),
+    new THREE.MeshPhongMaterial({ color: 0xffd1a4 })
+  );
+  head.position.y = 2.5;
+  stickFigure.add(head);
+
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2, 0.2, 1.5, 8),
+    new THREE.MeshPhongMaterial({ color: 0x000000 })
+  );
+  body.position.y = 1.5;
+  stickFigure.add(body);
+
+  const leftLeg = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1, 0.1, 1, 8),
+    new THREE.MeshPhongMaterial({ color: 0x000000 })
+  );
+  leftLeg.position.set(-0.2, 0.5, 0);
+  stickFigure.add(leftLeg);
+
+  const rightLeg = leftLeg.clone();
+  rightLeg.position.set(0.2, 0.5, 0);
+  stickFigure.add(rightLeg);
+
+  const leftArm = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.1, 0.1, 1, 8),
+    new THREE.MeshPhongMaterial({ color: 0x000000 })
+  );
+  leftArm.position.set(-0.5, 1.8, 0);
+  leftArm.rotation.z = Math.PI / 4;
+  stickFigure.add(leftArm);
+
+  const rightArm = leftArm.clone();
+  rightArm.position.set(0.5, 1.8, 0);
+  rightArm.rotation.z = -Math.PI / 4;
+  stickFigure.add(rightArm);
+
+  stickFigure.position.y = 0;
+  scene.add(stickFigure);
+
+  // Camera follow setup
+  camera.position.set(0, 5, 10);
+
+  // Movement variables
+  let keys = {};
+  let speed = 0.1;
+  let rotationSpeed = 0.05;
+
+  document.addEventListener("keydown", (e) => keys[e.key] = true);
+  document.addEventListener("keyup", (e) => keys[e.key] = false);
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    // Rotation
+    if (keys["ArrowLeft"]) stickFigure.rotation.y += rotationSpeed;
+    if (keys["ArrowRight"]) stickFigure.rotation.y -= rotationSpeed;
+
+    // Move forward/backward based on facing direction
+    const direction = new THREE.Vector3(
+      Math.sin(stickFigure.rotation.y),
+      0,
+      Math.cos(stickFigure.rotation.y)
+    );
+    if (keys["ArrowUp"]) {
+      stickFigure.position.addScaledVector(direction, -speed);
+    }
+    if (keys["ArrowDown"]) {
+      stickFigure.position.addScaledVector(direction, speed);
+    }
+
+    // Camera follow from behind
+    const camOffset = new THREE.Vector3(0, 5, 10).applyAxisAngle(new THREE.Vector3(0,1,0), -stickFigure.rotation.y);
+    camera.position.copy(stickFigure.position).add(camOffset);
+    camera.lookAt(stickFigure.position);
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // Handle resize
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+</body>
+</html>
