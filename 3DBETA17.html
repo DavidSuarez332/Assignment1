@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Stick Figure Parkour — Solid Boxes</title>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    canvas { display: block; }
+    .ui {
+      position: absolute; left: 12px; top: 12px;
+      color: #fff; background: rgba(0,0,0,0.45);
+      padding: 8px 10px; border-radius: 6px;
+      font-size: 13px; z-index: 10;
+    }
+  </style>
+</head>
+<body>
+<div class="ui">
+  Controls: Arrow Up/Down = forward/back • Arrow Left/Right = strafe • W/S = rotate • Space = jump
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+<script>
+// ===== SCENE SETUP =====
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+// Lights
+const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+scene.add(hemi);
+
+const dir = new THREE.DirectionalLight(0xffffff, 1);
+dir.position.set(10, 20, 10);
+dir.castShadow = true;
+dir.shadow.mapSize.width = 2048;
+dir.shadow.mapSize.height = 2048;
+dir.shadow.camera.left = -50;
+dir.shadow.camera.right = 50;
+dir.shadow.camera.top = 50;
+dir.shadow.camera.bottom = -50;
+scene.add(dir);
+
+// Ground
+const groundGeo = new THREE.PlaneGeometry(200, 200);
+const groundMat = new THREE.MeshPhongMaterial({ color: 0x228B22 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// ===== STICK FIGURE =====
+const stickFigure = new THREE.Group();
+function makePart(mesh) {
+  mesh.castShadow = true;
+  return mesh;
+}
+
+const head = makePart(new THREE.Mesh(
+  new THREE.SphereGeometry(0.45, 12, 12),
+  new THREE.MeshPhongMaterial({ color: 0xffd1a4 })
+));
+head.position.y = 2.4; stickFigure.add(head);
+
+const body = makePart(new THREE.Mesh(
+  new THREE.CylinderGeometry(0.18, 0.18, 1.4, 8),
+  new THREE.MeshPhongMaterial({ color: 0x000000 })
+));
+body.position.y = 1.45; stickFigure.add(body);
+
+const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 1, 8);
+const legMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
+const leftLeg = makePart(new THREE.Mesh(legGeo, legMat));
+leftLeg.position.set(-0.18, 0.5, 0); stickFigure.add(leftLeg);
+const rightLeg = leftLeg.clone(); rightLeg.position.set(0.18, 0.5, 0); stickFigure.add(rightLeg);
+
+const armGeo = new THREE.CylinderGeometry(0.07, 0.07, 1, 8);
+const leftArm = makePart(new THREE.Mesh(armGeo, legMat));
+leftArm.position.set(-0.45, 1.75, 0);
+leftArm.rotation.z = Math.PI/4;
+stickFigure.add(leftArm);
+const rightArm = leftArm.clone();
+rightArm.position.set(0.45, 1.75, 0);
+rightArm.rotation.z = -Math.PI/4;
+stickFigure.add(rightArm);
+
+stickFigure.position.set(0, 0, 0);
+scene.add(stickFigure);
+
+// ===== PLATFORMS =====
+const boxes = [];
+const boxMat = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+const NUM_PLATFORMS = 40;
+
+let currentX = 0, currentY = 0.5, currentZ = -5;
+for (let i = 0; i < NUM_PLATFORMS; i++) {
+  const width = 2 + Math.random() * 1.5;
+  const depth = 2 + Math.random() * 1.5;
+  const height = 0.5 + Math.random() * 1.5;
+  const boxGeo = new THREE.BoxGeometry(width, height, depth);
+  const box = new THREE.Mesh(boxGeo, boxMat);
+  box.castShadow = true;
+  box.receiveShadow = true;
+
+  currentX += (Math.random() - 0.5) * 3;
+  currentZ -= 4 + Math.random() * 2;
+  currentY += 1 + Math.random() * 1.5;
+
+  box.position.set(currentX, currentY, currentZ);
+  scene.add(box);
+  boxes.push(box);
+}
+
+// ===== CAMERA =====
+camera.position.set(0, 5, 12);
+camera.lookAt(stickFigure.position);
+
+// ===== MOVEMENT & PHYSICS =====
+const keys = {};
+const speed = 0.22;
+const strafeSpeed = 0.18;
+const rotationSpeed = 0.12;
+let velocityY = 0;
+const gravity = -0.025;
+const jumpStrength = 0.6;
+let isOnGround = true;
+
+window.addEventListener('keydown', (e) => {
+  keys[e.code] = true;
+  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+  if (e.code === 'Space' && isOnGround) {
+    velocityY = jumpStrength;
+    isOnGround = false;
+  }
+});
+window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+// ===== ANIMATION LOOP =====
+function animate() {
+  requestAnimationFrame(animate);
+
+  if (keys['KeyW']) stickFigure.rotation.y += rotationSpeed;
+  if (keys['KeyS']) stickFigure.rotation.y -= rotationSpeed;
+
+  const yaw = stickFigure.rotation.y;
+  const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+  const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+
+  let forwardInput = (keys['ArrowUp'] ? 1 : 0) + (keys['ArrowDown'] ? -1 : 0);
+  let strafeInput = (keys['ArrowRight'] ? 1 : 0) + (keys['ArrowLeft'] ? -1 : 0);
+
+  const candidate = stickFigure.position.clone();
+  candidate.add(forward.clone().multiplyScalar(forwardInput * speed));
+  candidate.add(right.clone().multiplyScalar(strafeInput * strafeSpeed));
+
+  // --- SIDE COLLISION CHECK ---
+  let canMove = true;
+  for (const box of boxes) {
+    const halfW = box.geometry.parameters.width / 2;
+    const halfD = box.geometry.parameters.depth / 2;
+    const halfH = box.geometry.parameters.height / 2;
+
+    const minX = box.position.x - halfW;
+    const maxX = box.position.x + halfW;
+    const minZ = box.position.z - halfD;
+    const maxZ = box.position.z + halfD;
+    const minY = box.position.y - halfH;
+    const maxY = box.position.y + halfH;
+
+    const playerBottom = stickFigure.position.y;
+    const playerTop = stickFigure.position.y + 2.4;
+
+    if (
+      candidate.x > minX && candidate.x < maxX &&
+      candidate.z > minZ && candidate.z < maxZ &&
+      playerTop > minY && playerBottom < maxY
+    ) {
+      canMove = false;
+      break;
+    }
+  }
+  if (canMove) {
+    stickFigure.position.x = candidate.x;
+    stickFigure.position.z = candidate.z;
+  }
+
+  // Gravity
+  velocityY += gravity;
+  stickFigure.position.y += velocityY;
+  isOnGround = false;
+
+  // Ground collision
+  if (stickFigure.position.y <= 0) {
+    stickFigure.position.y = 0;
+    velocityY = 0;
+    isOnGround = true;
+  }
+
+  // Box collision (landing on tops)
+  for (const box of boxes) {
+    const halfW = box.geometry.parameters.width / 2;
+    const halfD = box.geometry.parameters.depth / 2;
+    const halfH = box.geometry.parameters.height / 2;
+
+    const minX = box.position.x - halfW;
+    const maxX = box.position.x + halfW;
+    const minZ = box.position.z - halfD;
+    const maxZ = box.position.z + halfD;
+    const topY = box.position.y + halfH;
+
+    const withinXZ =
+      stickFigure.position.x > minX &&
+      stickFigure.position.x < maxX &&
+      stickFigure.position.z > minZ &&
+      stickFigure.position.z < maxZ;
+
+    if (withinXZ) {
+      // Land on top
+      if (velocityY <= 0 && stickFigure.position.y >= topY - 0.1) {
+        if (stickFigure.position.y + velocityY <= topY) {
+          stickFigure.position.y = topY;
+          velocityY = 0;
+          isOnGround = true;
+        }
+      }
+      // Prevent sinking into platform
+      if (stickFigure.position.y < topY) {
+        stickFigure.position.y = topY;
+        velocityY = 0;
+        isOnGround = true;
+      }
+    }
+  }
+
+  // Camera follow
+  const camOffset = new THREE.Vector3(0, 5, 12).applyAxisAngle(new THREE.Vector3(0,1,0), -stickFigure.rotation.y);
+  camera.position.copy(stickFigure.position).add(camOffset);
+  camera.lookAt(stickFigure.position.clone().add(new THREE.Vector3(0,1.6,0)));
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// Resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
